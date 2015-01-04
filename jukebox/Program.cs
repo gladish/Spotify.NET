@@ -8,12 +8,12 @@ namespace jukebox
     {
         private static byte[] ApplicationKey = 
         {
-            // Add application key here
+            // Add application key here, or use File in the SessionConfig
         };
 
         static void Main(string[] args)
         {
-            Program p = new Program();
+            Program p = new Program(args);
             p.Run();
         }
 
@@ -21,12 +21,16 @@ namespace jukebox
             new NAudio.Wave.WaveFormat(44100, 2));
 
         private NAudio.Wave.WaveOut _audioSink;
+        private string _user;
+        private string _password;
 
-        public Program()
+        public Program(string[] args)
         {
             _audioProvider.BufferDuration = TimeSpan.FromSeconds(300);
             _audioSink = new NAudio.Wave.WaveOut();
             _audioSink.Init(_audioProvider);
+            _user = args[0];
+            _password = args[1];
         }
 
         private void Run()
@@ -37,7 +41,7 @@ namespace jukebox
             Spotify.Session session = Spotify.Session.Create(new Spotify.SessionConfig()
             {
                 TraceFile = Path.Combine(Path.GetTempPath(), "SpotifyTrace.txt"),
-                ApplicationKey = ApplicationKey,
+                ApplicationKeyFile = @"c:\Temp\spotify_appkey.key",
                 UserAgent = "Spotify.NET"
             });
 
@@ -47,8 +51,8 @@ namespace jukebox
 
             session.LoginAsync(new Spotify.LoginParameters()
                 {
-                    UserName = "<your username>",
-                    Password = "<your password>",
+                    UserName = _user,
+                    Password = _password,
                     RememberMe = false,
                     Blob = null
                 }, null).Wait();
@@ -57,10 +61,14 @@ namespace jukebox
             Spotify.SearchParameters searchParams = new Spotify.SearchParameters()
             {
                 AlbumCount = 10,
+                TrackCount = 3,
                 Query = "Leonard Cohen"
             };
 
             bool done = false;
+
+            Spotify.Track anyTrack = null;
+
             while (!done)
             {
                 var task = session.SearchAsync(searchParams, null);
@@ -72,8 +80,11 @@ namespace jukebox
                 foreach (Spotify.Album album in search.Albums)
                 {
                     Console.WriteLine("Album: " + album.Name);
-                    //album.Dispose();
+                    album.Dispose();
                 }
+
+                if (anyTrack == null)
+                    anyTrack = search.Tracks[0];
 
                 if (search.NumAlbums == 0)
                     done = true;
@@ -82,14 +93,20 @@ namespace jukebox
                 search.Dispose();
             }
 
-            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(2));
+            //session.Dispose();
 
+            // just play first track
 
-            session.Dispose();
+            Console.WriteLine("Playing track");
+            Console.Write("\t");
+            Spotify.Diagnostics.Debug.Print(Console.Out, anyTrack);
 
-            //session.PlayerLoad(track);
-            //session.PlayerPlay(true);
-            //_audioSink.Play();
+            session.PlayerLoad(anyTrack);
+            session.PlayerPlay(true);
+            _audioSink.Play();
+
+            // just wait here
+            System.Threading.Thread.Sleep(TimeSpan.FromHours(2));
         }
 
         private void OnMessageToUser(object sender, Spotify.MessageToUserEventArgs e)

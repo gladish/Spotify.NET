@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+
 using Spotify.Internal;
 
 namespace Spotify
@@ -365,11 +367,12 @@ namespace Spotify
                 LibSpotify.sp_session_config config = new LibSpotify.sp_session_config();
                 config.api_version = sessionConfig.ApiVersion;
 
-                applicationKeyHandle = Marshal.AllocHGlobal(sessionConfig.ApplicationKey.Length);
-                Marshal.Copy(sessionConfig.ApplicationKey, 0, applicationKeyHandle, sessionConfig.ApplicationKey.Length);
+                byte[] key = GetApplicationKey(sessionConfig);
+                applicationKeyHandle = Marshal.AllocHGlobal(key.Length);
+                Marshal.Copy(key, 0, applicationKeyHandle, key.Length);
                 config.application_key = applicationKeyHandle;
 
-                config.application_key_size = new IntPtr(sessionConfig.ApplicationKey.Length);
+                config.application_key_size = new IntPtr(key.Length);
                 config.cache_location = sessionConfig.CacheLocation;
                 config.compress_playlists = sessionConfig.CompressPlaylists;
                 config.device_id = sessionConfig.DeviceId;
@@ -675,6 +678,18 @@ namespace Spotify
             {
                 _handle = value;
             }
+        }
+
+        private static byte[] GetApplicationKey(SessionConfig config)
+        {
+            ThrowHelper.ThrowIfNull(config, "config");
+            if (string.IsNullOrEmpty(config.ApplicationKeyFile) && config.ApplicationKey == null)
+                throw new ArgumentException("both ApplicationKey and ApplicationKeyFile are unset in SessionConfig");
+          
+            byte[] key = config.ApplicationKey;
+            if (key == null)
+                key = File.ReadAllBytes(config.ApplicationKeyFile);
+            return key;
         }
 
         private Thread _thread;

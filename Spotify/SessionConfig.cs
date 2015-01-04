@@ -31,10 +31,28 @@ namespace Spotify
             set;
         }
 
+        private byte[] _applicationKey;
         public byte[] ApplicationKey
         {
-            get;
-            set;
+            get { return _applicationKey; }
+            set
+            {
+                if (!string.IsNullOrEmpty(ApplicationKeyFile))
+                    throw new ArgumentException("can't set ApplicationKey and ApplicationKeyFile");
+                _applicationKey = value;
+            }
+        }
+
+        private string _applicationKeyFile;
+        public string ApplicationKeyFile
+        {
+            get { return _applicationKeyFile;  }
+            set
+            {
+                if (ApplicationKey != null)
+                    throw new ArgumentException("can't set ApplicationKeyFile and ApplicationKey");
+                _applicationKeyFile = value;
+            }
         }
 
         public string UserAgent
