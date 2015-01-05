@@ -61,17 +61,17 @@ namespace Spotify
         #endregion
 
         #region Async Methods
-        public Task<System.Drawing.Image> LoadCoverAsync(Session session, ImageSize size, object stateObject)
+        public Task<System.Drawing.Image> LoadCoverAsync(Session session, ImageSize size, object state)
         {
             return Task.Factory.FromAsync<Session, ImageSize, System.Drawing.Image>(BeginLoadCover, EndLoadCover, session,
-                size, stateObject);
+                size, state);
         } 
 
-        public IAsyncResult BeginLoadCover(Session session, ImageSize size, AsyncCallback userCallback, 
-            object stateObject)
+        public IAsyncResult BeginLoadCover(Session session, ImageSize size, AsyncCallback userCallback,
+            object state)
         {
             return Internal.ImageLoader.Begin(LibSpotify.sp_album_cover_r, Handle, session, size,
-                userCallback, stateObject);
+                userCallback, state);
         }
 
         public System.Drawing.Image EndLoadCover(IAsyncResult result)

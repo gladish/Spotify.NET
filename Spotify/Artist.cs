@@ -31,15 +31,15 @@ namespace Spotify
         #endregion
 
         #region Async Methods
-        public Task<System.Drawing.Image> SearchAsync(Session session, ImageSize size, AsyncCallback userCallback, object stateObject)
+        public Task<System.Drawing.Image> SearchAsync(Session session, ImageSize size, AsyncCallback userCallback, object state)
         {
-            return Task.Factory.FromAsync<Session, ImageSize, System.Drawing.Image>(BeginLoadPortrait, EndLoadPortrait, session, size, stateObject);
-        } 
+            return Task.Factory.FromAsync<Session, ImageSize, System.Drawing.Image>(BeginLoadPortrait, EndLoadPortrait, session, size, state);
+        }
 
-        public IAsyncResult BeginLoadPortrait(Session session, ImageSize size, AsyncCallback userCallback, object stateObject)
+        public IAsyncResult BeginLoadPortrait(Session session, ImageSize size, AsyncCallback userCallback, object state)
         {
             return ImageLoader.Begin(LibSpotify.sp_artist_portrait_r, Handle, session, size,
-                userCallback, stateObject);
+                userCallback, state);
         }
 
         public System.Drawing.Image EndLoadPortrait(IAsyncResult result)

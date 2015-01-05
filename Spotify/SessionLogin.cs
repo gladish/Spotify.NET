@@ -1,10 +1,26 @@
 ﻿using System;
 using System.Threading.Tasks;
 
+using Spotify.Internal;
+
 namespace Spotify
 {
     public partial class Session
     {
+        private class AsyncLoginResult : AbstractAsyncResult
+        {
+            public AsyncLoginResult(AsyncCallback userCallback, object stateObject)
+                : base(userCallback, stateObject)
+            {
+            }
+
+            public void HandleLoggedIn(object sender, LoggedInEventArgs e)
+            {
+                SetCompleted(e.ErrorCode);
+                InvokeUserCallack();
+            }
+        }
+
         public Task LoginAsync(LoginParameters loginParams, object stateObject)
         {
             return Task.Factory.FromAsync<LoginParameters>(BeginLogin, EndLogin, loginParams, stateObject);
@@ -12,10 +28,10 @@ namespace Spotify
 
         public IAsyncResult BeginLogin(LoginParameters loginParams, AsyncCallback userCallback, object stateObject)
         {
-            Internal.AsyncLoginResult result = new Internal.AsyncLoginResult(userCallback, stateObject);
+            AsyncLoginResult result = new AsyncLoginResult(userCallback, stateObject);
             this.OnLoggedIn += result.HandleLoggedIn;
 
-            Internal.ThrowHelper.ThrowIfError(LibSpotify.sp_session_login_r(Handle, loginParams.UserName,
+            ThrowHelper.ThrowIfError(LibSpotify.sp_session_login_r(Handle, loginParams.UserName,
                 loginParams.Password, loginParams.RememberMe, IntPtr.Zero));
 
             return result;
@@ -23,7 +39,7 @@ namespace Spotify
 
         public void EndLogin(IAsyncResult result)
         {
-            Internal.AsyncLoginResult loginResult = Internal.ThrowHelper.DownCast<Internal.AsyncLoginResult>(result, "result");
+            AsyncLoginResult loginResult = ThrowHelper.DownCast<AsyncLoginResult>(result, "result");
             loginResult.WaitAndCheckPendingException();
         }
     }

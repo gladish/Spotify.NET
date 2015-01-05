@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Spotify.Internal
 {
-    internal abstract class AsyncResult : IAsyncResult
+    internal abstract class AbstractAsyncResult : IAsyncResult
     {
         private static HashSet<IAsyncResult> _outstandingOperations = new HashSet<IAsyncResult>();
 
@@ -13,10 +13,10 @@ namespace Spotify.Internal
         private ManualResetEvent _waitHandle = new ManualResetEvent(false);
         private AsyncCallback _userCallback;
 
-        public AsyncResult(AsyncCallback userCallback, object stateObject)
+        public AbstractAsyncResult(AsyncCallback userCallback, object state)
         {
             _userCallback = userCallback;
-            AsyncState = stateObject;
+            AsyncState = state;
 
             lock (_outstandingOperations)
             {

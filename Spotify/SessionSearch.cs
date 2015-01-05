@@ -7,18 +7,32 @@ namespace Spotify
 {
     public partial class Session
     {
-        public Task<Search> SearchAsync(SearchParameters searchParams, object stateObject)
+        private class AsyncSearchResult : AsyncCallbackResult<Search>
         {
-            return Task.Factory.FromAsync<SearchParameters, Search>(BeginSearch, EndSearch, searchParams, stateObject);
+            public AsyncSearchResult(AsyncCallback userCallback, object state)
+                : base(userCallback, state)
+            {
+            }
+
+            public void SearchComplete(IntPtr search, IntPtr data)
+            {
+                if (search != IntPtr.Zero)
+                    Closure = new Search(search);
+                SetCallbackComplete();
+            }
         }
 
-        public IAsyncResult BeginSearch(SearchParameters searchParams, AsyncCallback userCallback, object stateObject)
+        public Task<Search> SearchAsync(SearchParameters searchParams, object state)
+        {
+            return Task.Factory.FromAsync<SearchParameters, Search>(BeginSearch, EndSearch, searchParams, state);
+        }
+
+        public IAsyncResult BeginSearch(SearchParameters searchParams, AsyncCallback userCallback, object state)
         {
             ThrowHelper.ThrowIfNull(searchParams, "searchParams");
+            AsyncSearchResult searchResult = new AsyncSearchResult(userCallback, state);
 
-            AsyncSearchResult searchResult = new AsyncSearchResult(userCallback, stateObject);
-
-            Search search = new Search(LibSpotify.sp_search_create_r(
+            LibSpotify.sp_search_create_r(
                 Handle,
                 searchParams.Query,
                 searchParams.TrackOffset,
@@ -31,10 +45,8 @@ namespace Spotify
                 searchParams.PlaylistCount,
                 searchParams.SearchType,
                 searchResult.SearchComplete,
-                IntPtr.Zero));
+                IntPtr.Zero);
 
-            // searchResult.SearchComplete may be called before ApiClosure is set
-            searchResult.ApiClosure = search;
             return searchResult;
         }
 
@@ -42,11 +54,23 @@ namespace Spotify
         {
             AsyncSearchResult searchResult = ThrowHelper.DownCast<AsyncSearchResult>(result, "result");
             searchResult.WaitForCallbackComplete();
-
-            Search search = (Search)searchResult.ApiClosure;
-            searchResult.SetCompleted(search.Error);
+            searchResult.SetCompleted(searchResult.Closure.Error);
             searchResult.CheckPendingException();
-            return search;
+            return searchResult.Closure;
+        }
+
+
+        // Don't use. I need to come up with a way to cleany fetch the Error property wihtout using reflection/dynamic typing.
+        // I can't seem to come up with an Interface name for a class that has a property named 'Error'
+        private TClosure BasicEnd<TClosure, TResult>(TResult result) where TResult : AsyncCallbackResult<TClosure>
+            where TClosure : class
+        {
+            TResult basicResult = ThrowHelper.DownCast<TResult>(result, "result");
+            basicResult.WaitForCallbackComplete();
+            // TODO IClosure needs Error property
+            // basicResult.SetCompleted(basicResult.Closure.Error);
+            basicResult.CheckPendingException();
+            return basicResult.Closure;
         }
     }
 }

@@ -6,12 +6,12 @@ namespace Spotify.Internal
     {
         public delegate IntPtr ImageLoad(IntPtr p, ImageSize size);
 
-        public static IAsyncResult Begin(ImageLoad load, IntPtr p, Session session, ImageSize size, 
-            AsyncCallback userCallback, object stateObject)
+        public static IAsyncResult Begin(ImageLoad load, IntPtr p, Session session, ImageSize size,
+            AsyncCallback userCallback, object state)
         {
-            AsyncLoadImageResult result = new AsyncLoadImageResult(userCallback, stateObject);
+            AsyncLoadImageResult result = new AsyncLoadImageResult(userCallback, state);
             Image image = session.CreateImage(load(p, size));
-            result.ApiClosure = image;
+            result.Closure = image;
             image.OnLoaded += result.HandleImageLoaded;
             return result;
         }
@@ -21,9 +21,9 @@ namespace Spotify.Internal
             AsyncLoadImageResult loadImageResult = ThrowHelper.DownCast<AsyncLoadImageResult>(result, "result");
             loadImageResult.WaitForCallbackComplete();
 
-            using (Image image = (Image)loadImageResult.ApiClosure)
+            using (Image image = loadImageResult.Closure)
             {
-                loadImageResult.ApiClosure = null;
+                loadImageResult.Closure = null;
                 loadImageResult.SetCompleted(image.Error);
                 loadImageResult.CheckPendingException();
 

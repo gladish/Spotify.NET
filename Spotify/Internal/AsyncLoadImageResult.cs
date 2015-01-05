@@ -3,10 +3,10 @@
 
 namespace Spotify.Internal
 {
-    internal class AsyncLoadImageResult : AsyncCallbackResult
+    internal class AsyncLoadImageResult : AsyncCallbackResult<Image>
     {
-        public AsyncLoadImageResult(AsyncCallback userCallback, object stateObject)
-            : base(userCallback, stateObject)
+        public AsyncLoadImageResult(AsyncCallback userCallback, object state)
+            : base(userCallback, state)
         {
         }
 

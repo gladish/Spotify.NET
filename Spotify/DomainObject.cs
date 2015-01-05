@@ -55,12 +55,10 @@ namespace Spotify
         {
             lock (_objectsToDispose)
             {
-                // I know this is completely natural, but the Dispose() on the DomainObject will remove
-                // the current instance frmo the _objectsToDispose collection.
-                // This is here because calling Dipose() on the session before Disposing() other DomainObjects
-                // leaves the job to the finalizer. I was getting exceptions from the unmanaged layer when 
-                // trying to release unmanaged objects after the session is released. This ensures that all
-                // objects are disposed and is invoked from the Session.Dispose()
+                // We have to Dipose() of all objects instead of leaving it to the finalizer in the case 
+                // the that application exits and tries to Dispose() the session. For some reason, calling
+                // sp_session_release on the session and then calling _release_ on other objects causes
+                // a  crash. This is here to ensure that all objects are Dispose()'d before the session
                 while (_objectsToDispose.Count > 0)
                 {
                     DomainObject obj = _objectsToDispose.First();

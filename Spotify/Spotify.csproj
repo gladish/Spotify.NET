@@ -56,9 +56,6 @@
     <Compile Include="Diagnostics\Debug.cs" />
     <Compile Include="DomainObject.cs" />
     <Compile Include="Environment.cs" />
-    <Compile Include="Internal\AsyncSearchResult.cs" />
-    <Compile Include="Internal\AsyncLoginResult.cs" />
-    <Compile Include="Internal\HandleSetAside.cs" />
     <Compile Include="Internal\ImageLoader.cs" />
     <Compile Include="Internal\TimeUtil.cs" />
     <Compile Include="LoggedInEventArgs.cs" />
@@ -82,6 +79,7 @@
     <Compile Include="ScrobbleErrorEventArgs.cs" />
     <Compile Include="SearchParameters.cs" />
     <Compile Include="Internal\ThrowHelper.cs" />
+    <Compile Include="SessionArtistBrowse.cs" />
     <Compile Include="SessionLogin.cs" />
     <Compile Include="SessionSearch.cs" />
     <Compile Include="StreamingErrorEventArgs.cs" />

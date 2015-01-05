@@ -3,14 +3,14 @@ using System.Threading;
 
 namespace Spotify.Internal
 {
-    internal class AsyncCallbackResult : AsyncResult
+    internal class AsyncCallbackResult<TClosure> : AbstractAsyncResult where TClosure : class
     {
         private ManualResetEvent _callbackCompletedEvent = new ManualResetEvent(false);
 
-        public AsyncCallbackResult(AsyncCallback userCallback, object stateObject) :
-            base(userCallback, stateObject)
+        public AsyncCallbackResult(AsyncCallback userCallback, object state) :
+            base(userCallback, state)
         {
-
+            // empty
         }
 
         public void WaitForCallbackComplete()
@@ -26,7 +26,7 @@ namespace Spotify.Internal
             InvokeUserCallack();
         }
 
-        public object ApiClosure
+        public TClosure Closure
         {
             get;
             set;
