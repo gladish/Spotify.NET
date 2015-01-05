@@ -12,6 +12,7 @@ namespace Spotify
         {
         }
 
+        #region Properties
         public bool IsLoaded
         {
             get
@@ -27,7 +28,9 @@ namespace Spotify
                 return LibSpotify.ReadUtf8(LibSpotify.sp_artist_name_r(Handle));
             }
         }
+        #endregion
 
+        #region Async Methods
         public Task<System.Drawing.Image> SearchAsync(Session session, ImageSize size, AsyncCallback userCallback, object stateObject)
         {
             return Task.Factory.FromAsync<Session, ImageSize, System.Drawing.Image>(BeginLoadPortrait, EndLoadPortrait, session, size, stateObject);
@@ -42,6 +45,7 @@ namespace Spotify
         public System.Drawing.Image EndLoadPortrait(IAsyncResult result)
         {
             return ImageLoader.End(result);
-        } 
+        }
+        #endregion
     }
 }

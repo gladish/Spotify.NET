@@ -10,6 +10,7 @@ namespace Spotify
         {
         }
 
+        #region Properties
         public Artist Artist
         {
             get
@@ -57,7 +58,9 @@ namespace Spotify
                 return LibSpotify.sp_album_year_r(Handle);
             }
         }
+        #endregion
 
+        #region Async Methods
         public Task<System.Drawing.Image> LoadCoverAsync(Session session, ImageSize size, object stateObject)
         {
             return Task.Factory.FromAsync<Session, ImageSize, System.Drawing.Image>(BeginLoadCover, EndLoadCover, session,
@@ -74,6 +77,7 @@ namespace Spotify
         public System.Drawing.Image EndLoadCover(IAsyncResult result)
         {
             return Internal.ImageLoader.End(result);
-        } 
+        }
+        #endregion
     }
 }
