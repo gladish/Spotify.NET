@@ -1,49 +1,161 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 using Spotify.Internal;
 
 namespace Spotify
 {
     public class PlaylistContainer : DomainObject
     {
+        #region Events
         public event EventHandler<PlaylistAddedEventArgs> OnPlaylistAdded;
         public event EventHandler OnPlaylistRemoved;
         public event EventHandler OnPlaylistMoved;
         public event EventHandler OnLoaded;
+        #endregion
 
         internal PlaylistContainer(IntPtr handle, bool preIncremented = true)
-            : base(handle, LibSpotify.sp_album_add_ref_r, LibSpotify.sp_album_release_r, preIncremented)
+            : base(handle, LibSpotify.sp_playlistcontainer_add_ref_r, LibSpotify.sp_playlistcontainer_release_r, preIncremented)
         {
             LibSpotify.sp_playlistcontainer_callbacks callbacks = new LibSpotify.sp_playlistcontainer_callbacks();
-            callbacks.container_loaded = RaiseContainerLoaded;
             callbacks.playlist_added = RaisePlaylistAdded;
-            callbacks.playlist_moved = RaisePlaylistMoved;
             callbacks.playlist_removed = RaisePlaylistRemoved;
+            callbacks.playlist_moved = RaisePlaylistMoved;
+            callbacks.container_loaded = RaiseContainerLoaded;
 
             ThrowHelper.ThrowIfError(LibSpotify.sp_playlistcontainer_add_callbacks_r(Handle,
                 ref callbacks, IntPtr.Zero));
         }
 
-        private void RaiseContainerLoaded(IntPtr pc, IntPtr userdata)
+
+        #region Properties
+        public User Owner
         {
-            EventDispatcher.Dispatch(this, pc, OnLoaded, EventArgs.Empty);
+            get
+            {
+                IntPtr p = LibSpotify.sp_playlistcontainer_owner_r(Handle);
+                return p != IntPtr.Zero ? new User(p, false) : null;
+            }
+        }
+        
+        public IList<Playlist> Playlists
+        {
+            get
+            {
+                IList<Playlist> list =  MakeList(p => { 
+                    return new Playlist(p, false); }, 
+                    LibSpotify.sp_playlistcontainer_num_playlists_r,
+                    LibSpotify.sp_playlistcontainer_playlist_r);
+
+                for (int i = 0; i < list.Count; ++i)
+                {
+                    list[i].ListType = LibSpotify.sp_playlistcontainer_playlist_type_r(Handle, i);
+                    list[i].Index = i;
+                }
+
+                return list;
+            }
         }
 
-        private void RaisePlaylistAdded(IntPtr pc, IntPtr playlist, int position, IntPtr userdata)
+        public bool IsLoaded
         {
-            EventDispatcher.Dispatch(this, pc, OnPlaylistAdded,
+            get
+            {
+                return LibSpotify.sp_playlistcontainer_is_loaded_r(Handle);
+            }
+        }
+        #endregion
+
+        public IList<Track> GetUnseenTracks(Playlist playlist)
+        {
+            IntPtr[] unseen = new IntPtr[1024];
+
+            int n = LibSpotify.sp_playlistcontainer_get_unseen_tracks_r(Handle, playlist.Handle, unseen, unseen.Length);
+            System.Diagnostics.Debug.Assert(n < unseen.Length);
+
+            List<Track> tracks = new List<Track>();
+
+            for (int i = 0; i < n; ++i)
+                tracks.Add(new Track(unseen[i], false));
+
+            return tracks;
+        }
+
+        public void ClearUnseenTracks(Playlist playList)
+        {
+            int ret = LibSpotify.sp_playlistcontainer_clear_unseen_tracks_r(Handle, playList.Handle);
+            if (ret == -1)
+                throw new InvalidOperationException("failed to clear unseen tracks"); // why?
+        }
+
+        public string GetPlaylistFolderName(Playlist playList)
+        {
+            StringBuilder builder = new StringBuilder(512);
+
+            ThrowHelper.ThrowIfError(LibSpotify.sp_playlistcontainer_playlist_folder_name_r(Handle, playList.Index,
+                builder, builder.Capacity));
+
+            return builder.ToString();
+        }
+
+        public long GetPlaylistFolderId(Playlist playList)
+        {
+            // TODO: Does this really need uint64? 
+            ulong id = LibSpotify.sp_playlistcontainer_playlist_folder_id_r(Handle, playList.Index);
+            return Convert.ToInt64(id);
+        }
+
+        public Playlist AddNewPlaylist(string name)
+        {
+            // TODO: See docs about ref-counting, does this need to be ref'd or is it already ref'd
+            return new Playlist(LibSpotify.sp_playlistcontainer_add_new_playlist_r(Handle, name), false);
+        }
+
+        public Playlist AddNewPlaylist(Link link)
+        {
+            return new Playlist(LibSpotify.sp_playlistcontainer_add_playlist_r(Handle, link.Handle), false);
+        }
+
+        public void RemovePlaylist(int index)
+        {
+            ThrowHelper.ThrowIfError(LibSpotify.sp_playlistcontainer_remove_playlist_r(Handle, index));
+        }
+
+        public void MovePlaylist(int index, int newPosition, bool dryRun)
+        {
+            ThrowHelper.ThrowIfError(LibSpotify.sp_playlistcontainer_move_playlist_r(Handle, index, newPosition, dryRun));
+        }
+
+        public void AddFolder(int index, string name)
+        {
+            ThrowHelper.ThrowIfError(LibSpotify.sp_playlistcontainer_add_folder_r(Handle, index, name));
+        }
+        
+
+        #region Private Methods
+        private void RaiseContainerLoaded(IntPtr playlistContainer, IntPtr state)
+        {
+            EventDispatcher.Dispatch(this, playlistContainer, OnLoaded, EventArgs.Empty);
+        }
+
+        private void RaisePlaylistAdded(IntPtr playlistContainer, IntPtr playlist, int position, IntPtr state)
+        {
+            EventDispatcher.Dispatch(this, playlistContainer, OnPlaylistAdded,
                 new PlaylistAddedEventArgs(playlist, position));
         }
 
-        private void RaisePlaylistMoved(IntPtr pc, IntPtr playlist, int position, int newPosition, IntPtr userdata)
+        private void RaisePlaylistMoved(IntPtr playlistContainer, IntPtr playlist, int position, int newPosition, IntPtr state)
         {
-            EventDispatcher.Dispatch(this, pc, OnPlaylistMoved,
+            EventDispatcher.Dispatch(this, playlistContainer, OnPlaylistMoved,
                 new PlaylistMovedEventArgs(playlist, position, newPosition));
         }
 
-        private void RaisePlaylistRemoved(IntPtr pc, IntPtr playlist, int position, IntPtr userdata)
+        private void RaisePlaylistRemoved(IntPtr playlistContainer, IntPtr playlist, int position, IntPtr state)
         {
-            EventDispatcher.Dispatch(this, pc, OnPlaylistRemoved,
+            EventDispatcher.Dispatch(this, playlistContainer, OnPlaylistRemoved,
                 new PlaylistRemovedEventArgs(playlist, position));
         }
+        #endregion
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -58,6 +59,25 @@ namespace jukebox
                 }, null).Wait();
 
 
+            using (Spotify.PlaylistContainer playlistContainer = session.PlaylistContainer)
+            {
+                foreach (Spotify.Playlist playList in playlistContainer.Playlists)
+                {
+                    Console.WriteLine("PlayList: {0}", playList.Name);
+                    foreach (Spotify.Track track in playList.Tracks)
+                        Spotify.Diagnostics.Debug.Print(Console.Out, track);
+
+                    playList.Dispose();
+                }
+            }
+            
+
+            session.Dispose();
+          
+        }
+
+        private void DoSearch(Spotify.Session session)
+        {
             Spotify.SearchParameters searchParams = new Spotify.SearchParameters()
             {
                 AlbumCount = 10,
@@ -93,17 +113,13 @@ namespace jukebox
                 search.Dispose();
             }
 
-            //session.Dispose();
-
-            // just play first track
-
-            Console.WriteLine("Playing track");
             Console.Write("\t");
             Spotify.Diagnostics.Debug.Print(Console.Out, anyTrack);
 
             session.PlayerLoad(anyTrack);
             session.PlayerPlay(true);
             _audioSink.Play();
+
 
             // just wait here
             System.Threading.Thread.Sleep(TimeSpan.FromHours(2));

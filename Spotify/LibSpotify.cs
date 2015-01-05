@@ -26,14 +26,14 @@ namespace Spotify
         public delegate void SessionCallbackPtivateSessionModeChanged(IntPtr session, bool is_private);
 
         public delegate void PlaylistTracksAdded(IntPtr pl, IntPtr[] tracks, int num_tracks, int position, IntPtr userdata);
-        public delegate void PlaylistTracksRemoved(IntPtr pl, int[] tracks, int num_tracks, IntPtr userdata);
-        public delegate void PlaylistTracksMoved(IntPtr pl, int[] tracks, int num_tracks, int new_position, IntPtr userdata);
+        public delegate void PlaylistTracksRemoved(IntPtr pl, IntPtr[] tracks, int num_tracks, IntPtr userdata);
+        public delegate void PlaylistTracksMoved(IntPtr pl, IntPtr[] tracks, int num_tracks, int new_position, IntPtr userdata);
         public delegate void PlaylistRenamed(IntPtr pl, IntPtr userdata);
         public delegate void PlaylistStateChanged(IntPtr pl, IntPtr userdata);
         public delegate void PlaylistUpdateInProgress(IntPtr pl, [MarshalAs(UnmanagedType.U1)] bool done, IntPtr userdata);
         public delegate void PlaylistMetadataUpdated(IntPtr pl, IntPtr userdata);
-        public delegate void PlaylistCreatedChange(IntPtr pl, int position, IntPtr user, int when, IntPtr userdata);
-        public delegate void PlaylistSeenChange(IntPtr pl, int position, [MarshalAs(UnmanagedType.U1)] bool done, IntPtr userdata);
+        public delegate void PlaylistCreatedChanged(IntPtr pl, int position, IntPtr user, int when, IntPtr userdata);
+        public delegate void PlaylistSeenChanged(IntPtr pl, int position, [MarshalAs(UnmanagedType.U1)] bool done, IntPtr userdata);
         public delegate void PlaylistDescriptionChanged(IntPtr pl, IntPtr description, IntPtr userdata);
         public delegate void PlaylistImageChanged(IntPtr pl, IntPtr image, IntPtr userdata);
         public delegate void PlaylistMessageChanged(IntPtr pl, int poistion, IntPtr message, IntPtr userdata);
@@ -44,7 +44,6 @@ namespace Spotify
         public delegate void PlaylistContainerPlaylistMoved(IntPtr pc, IntPtr playlist, int position, int new_position, IntPtr userdata);
         public delegate void PlaylistContainerLoaded(IntPtr pc, IntPtr userdata);
         #endregion
-
 
         [StructLayout(LayoutKind.Sequential)]
         public struct sp_session_callbacks
@@ -194,8 +193,8 @@ namespace Spotify
             public PlaylistStateChanged playlist_state_changed;
             public PlaylistUpdateInProgress playlist_update_in_progress;
             public PlaylistMetadataUpdated playlist_metadata_updated;
-            public PlaylistCreatedChange track_created_changed;
-            public PlaylistSeenChange track_seen_changed;
+            public PlaylistCreatedChanged track_created_changed;
+            public PlaylistSeenChanged track_seen_changed;
             public PlaylistDescriptionChanged description_changed;
             public PlaylistImageChanged image_changed;
             public PlaylistMessageChanged track_message_changed;
@@ -952,8 +951,8 @@ namespace Spotify
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
-        private static extern Spotify.Error sp_playlist_add_tracks(System.IntPtr playlist, System.IntPtr tracks, System.Int32 num_tracks, System.Int32 position, System.IntPtr session);
-        public static Spotify.Error sp_playlist_add_tracks_r(System.IntPtr playlist, System.IntPtr tracks, System.Int32 num_tracks, System.Int32 position, System.IntPtr session)
+        private static extern Spotify.Error sp_playlist_add_tracks(System.IntPtr playlist, System.IntPtr[] tracks, System.Int32 num_tracks, System.Int32 position, System.IntPtr session);
+        public static Spotify.Error sp_playlist_add_tracks_r(System.IntPtr playlist, System.IntPtr[] tracks, System.Int32 num_tracks, System.Int32 position, System.IntPtr session)
         {
             lock (_apiLock)
                 return sp_playlist_add_tracks(playlist, tracks, num_tracks, position, session);
@@ -1112,19 +1111,19 @@ namespace Spotify
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
-        private static extern Spotify.Error sp_playlist_set_collaborative(System.IntPtr playlist, System.Boolean seen);
-        public static Spotify.Error sp_playlist_set_collaborative_r(System.IntPtr playlist, System.Boolean seen)
+        private static extern Spotify.Error sp_playlist_set_collaborative(System.IntPtr playlist, System.Boolean collaborative);
+        public static Spotify.Error sp_playlist_set_collaborative_r(System.IntPtr playlist, System.Boolean collaborative)
         {
             lock (_apiLock)
-                return sp_playlist_set_collaborative(playlist, seen);
+                return sp_playlist_set_collaborative(playlist, collaborative);
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
-        private static extern Spotify.Error sp_playlist_set_in_ram(System.IntPtr session, System.IntPtr subscribers, System.Boolean in_ram);
-        public static Spotify.Error sp_playlist_set_in_ram_r(System.IntPtr session, System.IntPtr subscribers, System.Boolean in_ram)
+        private static extern Spotify.Error sp_playlist_set_in_ram(System.IntPtr session, System.IntPtr playlist, System.Boolean in_ram);
+        public static Spotify.Error sp_playlist_set_in_ram_r(System.IntPtr session, System.IntPtr playlist, System.Boolean in_ram)
         {
             lock (_apiLock)
-                return sp_playlist_set_in_ram(session, subscribers, in_ram);
+                return sp_playlist_set_in_ram(session, playlist, in_ram);
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
@@ -1143,6 +1142,28 @@ namespace Spotify
                 return sp_playlist_subscribers(playlist);
         }
 
+        internal static IList<string> GetPlaylistSubscribers(IntPtr playlist)
+        {
+            List<string> subscribers = new List<string>();
+
+            IntPtr p = LibSpotify.sp_playlist_subscribers_r(playlist);
+            if (p != IntPtr.Zero)
+            {
+                int n = Marshal.ReadInt32(p);
+
+                int offset = Marshal.SizeOf(typeof(Int32));
+                for (int i = 0; i < n; ++i)
+                {
+                    subscribers.Add(ReadUtf8(Marshal.ReadIntPtr(p, offset)));
+                    offset += Marshal.SizeOf(typeof(IntPtr));
+                }
+
+                LibSpotify.sp_playlist_subscribers_free_r(p);
+            }
+
+            return subscribers;
+        }
+
         [System.Runtime.InteropServices.DllImport("libspotify")]
         private static extern Spotify.Error sp_playlist_subscribers_free(System.IntPtr subscribers);
         public static Spotify.Error sp_playlist_subscribers_free_r(System.IntPtr subscribers)
@@ -1152,11 +1173,11 @@ namespace Spotify
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
-        private static extern Spotify.Error sp_playlist_subscribers_free(System.IntPtr session, System.IntPtr subscribers);
-        public static Spotify.Error sp_playlist_subscribers_free_r(System.IntPtr session, System.IntPtr subscribers)
+        private static extern Spotify.Error sp_playlist_update_subscribers(System.IntPtr session, System.IntPtr subscribers);
+        public static Spotify.Error sp_playlist_update_subscribers_r(System.IntPtr session, System.IntPtr subscribers)
         {
             lock (_apiLock)
-                return sp_playlist_subscribers_free(session, subscribers);
+                return sp_playlist_update_subscribers(session, subscribers);
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
@@ -1234,11 +1255,12 @@ namespace Spotify
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
-        private static extern System.IntPtr sp_playlistcontainer_add_new_playlist(System.IntPtr pc, System.IntPtr link);
-        public static System.IntPtr sp_playlistcontainer_add_new_playlist_r(System.IntPtr pc, System.IntPtr link)
+                                            
+        private static extern System.IntPtr sp_playlistcontainer_add_playlist(System.IntPtr pc, System.IntPtr link);
+        public static System.IntPtr sp_playlistcontainer_add_playlist_r(System.IntPtr pc, System.IntPtr link)
         {
             lock (_apiLock)
-                return sp_playlistcontainer_add_new_playlist(pc, link);
+                return sp_playlistcontainer_add_playlist(pc, link);
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
@@ -1258,11 +1280,11 @@ namespace Spotify
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
-        private static extern System.Int32 sp_playlistcontainer_get_unseen_tracks(System.IntPtr pc, System.IntPtr playlist, ref System.IntPtr tracks, System.Int32 num_tracks);
-        public static System.Int32 sp_playlistcontainer_get_unseen_tracks_r(System.IntPtr pc, System.IntPtr playlist, ref System.IntPtr tracks, System.Int32 num_tracks)
+        private static extern System.Int32 sp_playlistcontainer_get_unseen_tracks(System.IntPtr pc, System.IntPtr playlist, System.IntPtr[] tracks, System.Int32 num_tracks);
+        public static System.Int32 sp_playlistcontainer_get_unseen_tracks_r(System.IntPtr pc, System.IntPtr playlist, System.IntPtr[] tracks, System.Int32 num_tracks)
         {
             lock (_apiLock)
-                return sp_playlistcontainer_get_unseen_tracks(pc, playlist, ref tracks, num_tracks);
+                return sp_playlistcontainer_get_unseen_tracks(pc, playlist, tracks, num_tracks);
         }
 
         [System.Runtime.InteropServices.DllImport("libspotify")]

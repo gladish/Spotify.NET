@@ -82,7 +82,10 @@ namespace Spotify
         {
             get
             {
-                return new PlaylistContainer(LibSpotify.sp_session_playlistcontainer_r(Handle), false);
+                IntPtr p = LibSpotify.sp_session_playlistcontainer_r(Handle);
+                if (p == IntPtr.Zero)
+                    return null;
+                return new PlaylistContainer(p, false);
             }
         }
 
@@ -663,7 +666,7 @@ namespace Spotify
             _disposed = true;
         }
 
-        private IntPtr Handle
+        internal IntPtr Handle
         {
             get
             {
