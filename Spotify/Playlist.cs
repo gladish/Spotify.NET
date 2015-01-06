@@ -276,34 +276,30 @@ namespace Spotify
                 new PlaylistUpdateInProgrssEventArgs(done));
         }
 
-        private void RaiseTracksAdded(IntPtr playlist, IntPtr[] tracks, int numTracks, int position, IntPtr state)
+        private static IList<Track> FromArrayOfPointers(IntPtr[] p, int n)
         {
             List<Track> list = new List<Track>();
-            for (int i = 0; i < numTracks; ++i)
-                list.Add(new Track(tracks[i], false));
+            for (int i = 0; i < n; ++i)
+                list.Add(new Track(p[i], false));
+            return list;
+        }
 
+        private void RaiseTracksAdded(IntPtr playlist, IntPtr[] tracks, int numTracks, int position, IntPtr state)
+        {         
             Internal.EventDispatcher.Dispatch(this, playlist, OnTracksAdded,
-                new PlaylistTracksAddedEventArgs(list, position));
+                new PlaylistTracksAddedEventArgs(FromArrayOfPointers(tracks, numTracks), position));
         }
 
         private void RaiseTracksRemoved(IntPtr playlist, IntPtr[] tracks, int numTracks, IntPtr state)
-        {
-            List<Track> list = new List<Track>();
-            for (int i = 0; i < numTracks; ++i)
-                list.Add(new Track(tracks[i], false));
-
+        {            
             Internal.EventDispatcher.Dispatch(this, playlist, OnTracksRemoved,
-                new PlaylistTracksRemovedEventArgs(list));
+                new PlaylistTracksRemovedEventArgs(FromArrayOfPointers(tracks, numTracks)));
         }
 
         private void RaiseTracksMoved(IntPtr playlist, IntPtr[] tracks, int numTracks, int newPosition, IntPtr state)
-        {
-            List<Track> list = new List<Track>();
-            for (int i = 0; i < numTracks; ++i)
-                list.Add(new Track(tracks[i], false));
-
+        {           
             Internal.EventDispatcher.Dispatch(this, playlist, OnTracksMoved,
-                new PlaylistTracksMovedEventArgs(list, newPosition));
+                new PlaylistTracksMovedEventArgs(FromArrayOfPointers(tracks, numTracks), newPosition));
         }
 
         private void RaiseCreatedChanged(IntPtr playlist, int position, IntPtr user, int when, IntPtr state)
