@@ -186,9 +186,8 @@ namespace Spotify
         }
 
         public void Start()
-        {
-            _running = true;
-            _thread = new Thread(this.Main);
+        {            
+            _thread = new Thread(ProcessEvents);
             _thread.Name = "Spotify.NET Event";
             _thread.Start();
         }
@@ -254,6 +253,11 @@ namespace Spotify
         {
             return new Playlist(LibSpotify.sp_session_starred_for_user_create_r(Handle,
                 canonicalUser));
+        }
+
+        public PlaylistContainer CreatePlaylistContainer()
+        {
+            return new PlaylistContainer(LibSpotify.sp_session_playlistcontainer_r(Handle), false);
         }
 
         public PlaylistContainer CreatePublishedContainerForUser(string canonicalUser)
@@ -422,6 +426,7 @@ namespace Spotify
 
                 // This call results in a callback to RaiseNotifyMainThread, but the
                 // actual _handle has not been set yet.
+                session._running = true;
                 ThrowHelper.ThrowIfError(LibSpotify.sp_session_create_r(ref config, ref ptr));
                 session.Handle = ptr;
             }
@@ -442,7 +447,7 @@ namespace Spotify
             return new Internal.Image(LibSpotify.sp_image_create_r(Handle, imageId));
         }
 
-        private void Main()
+        public void ProcessEvents()
         {
             TimeSpan nextTimeout = TimeSpan.FromHours(24);
 
@@ -454,7 +459,7 @@ namespace Spotify
 
                 do
                 {
-                    nextTimeout = ProcessEvents();
+                    nextTimeout = ProcessEventsInternal();
                 }
                 while (nextTimeout == TimeSpan.MinValue);
             }
@@ -473,7 +478,7 @@ namespace Spotify
             _notifyEvent.Set();
         }
 
-        private TimeSpan ProcessEvents()
+        private TimeSpan ProcessEventsInternal()
         {
             int nextTimeout = 0;
             lock (_lock)
