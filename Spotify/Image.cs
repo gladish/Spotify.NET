@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Spotify.Internal
+using Spotify.Internal;
+
+namespace Spotify
 {
-    internal class Image : DomainObject
+    public class Image : DomainObject
     {
         public event EventHandler OnLoaded;
 
@@ -11,6 +13,12 @@ namespace Spotify.Internal
             : base(handle, LibSpotify.sp_image_add_ref_r, LibSpotify.sp_image_release_r, preIncremented)
         {
             ThrowHelper.ThrowIfError(LibSpotify.sp_image_add_load_callback_r(Handle, HandleImageLoaded, IntPtr.Zero));
+        }
+
+        public System.Drawing.Image ToImage()
+        {
+            // don't Dispose() the MemoryStream, the Image will own it.
+            return System.Drawing.Image.FromStream(new System.IO.MemoryStream(Data));
         }
 
         protected override void Dispose(bool disposing)

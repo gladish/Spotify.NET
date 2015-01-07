@@ -45,7 +45,6 @@
     <Compile Include="CredentialsBlobUpdatedEventArgs.cs" />
     <Compile Include="ErrorEventArgs.cs" />
     <Compile Include="Internal\AsyncCallbackResult.cs" />
-    <Compile Include="Internal\AsyncLoadImageResult.cs" />
     <Compile Include="Internal\AsyncResult.cs" />
     <Compile Include="AudioBufferStats.cs" />
     <Compile Include="AudioFormat.cs" />
@@ -87,7 +86,7 @@
     <Compile Include="Error.cs" />
     <Compile Include="Internal\EventDispatcher.cs" />
     <Compile Include="Exception.cs" />
-    <Compile Include="Internal\Image.cs" />
+    <Compile Include="Image.cs" />
     <Compile Include="ImageFormat.cs" />
     <Compile Include="ImageSize.cs" />
     <Compile Include="LibSpotify.cs" />

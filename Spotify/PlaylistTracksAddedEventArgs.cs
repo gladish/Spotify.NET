@@ -5,12 +5,12 @@ namespace Spotify
 {
     public class PlaylistTracksAddedEventArgs : EventArgs
     {
-        public PlaylistTracksAddedEventArgs(IList<Track> tracks, int position)
+        public PlaylistTracksAddedEventArgs(IList<int> tracks, int position)
         {
             Tracks = tracks;
             Position = position;
         }
         public readonly int Position;
-        public readonly IList<Track> Tracks;
+        public readonly IList<int> Tracks;
     }
 }

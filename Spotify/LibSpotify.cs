@@ -25,9 +25,9 @@ namespace Spotify
         public delegate int SessionCallbackMusicDelivery(IntPtr session, IntPtr format, IntPtr frames, int num_frames);
         public delegate void SessionCallbackPtivateSessionModeChanged(IntPtr session, bool is_private);
 
-        public delegate void PlaylistTracksAdded(IntPtr pl, IntPtr[] tracks, int num_tracks, int position, IntPtr userdata);
-        public delegate void PlaylistTracksRemoved(IntPtr pl, IntPtr[] tracks, int num_tracks, IntPtr userdata);
-        public delegate void PlaylistTracksMoved(IntPtr pl, IntPtr[] tracks, int num_tracks, int new_position, IntPtr userdata);
+        public delegate void PlaylistTracksAdded(IntPtr pl, int[] tracks, int num_tracks, int position, IntPtr userdata);
+        public delegate void PlaylistTracksRemoved(IntPtr pl, int[] tracks, int num_tracks, IntPtr userdata);
+        public delegate void PlaylistTracksMoved(IntPtr pl, int[] tracks, int num_tracks, int new_position, IntPtr userdata);
         public delegate void PlaylistRenamed(IntPtr pl, IntPtr userdata);
         public delegate void PlaylistStateChanged(IntPtr pl, IntPtr userdata);
         public delegate void PlaylistUpdateInProgress(IntPtr pl, [MarshalAs(UnmanagedType.U1)] bool done, IntPtr userdata);

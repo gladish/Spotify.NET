@@ -40,6 +40,11 @@ namespace Spotify
             Dispose(false);
         }
 
+        public bool IsClone(DomainObject other)
+        {
+            return Handle == other.Handle;
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -121,6 +126,20 @@ namespace Spotify
         protected delegate int MakeListGetCount(IntPtr p);
         protected delegate IntPtr MakeListGetItem<T>(IntPtr p, int index);
         protected delegate T MakeListConstructor<T>(IntPtr p);
+
+        protected T ListItem<T>(int index, MakeListConstructor<T> make, MakeListGetCount count, MakeListGetItem<T> get)
+        {
+            if (index < 0)
+                throw new ArgumentOutOfRangeException("index < 0");
+
+            IntPtr p = Handle;
+
+            int n = count(p);
+            if (index >= n)
+                throw new ArgumentOutOfRangeException("index >= " + n);
+
+            return make(get(p, index));
+        }
 
         protected IList<T> MakeList<T>(MakeListConstructor<T> make, MakeListGetCount count, MakeListGetItem<T> get)
         {

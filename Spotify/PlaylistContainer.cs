@@ -10,7 +10,7 @@ namespace Spotify
     {
         #region Events
         public event EventHandler<PlaylistAddedEventArgs> OnPlaylistAdded;
-        public event EventHandler OnPlaylistRemoved;
+        public event EventHandler<PlaylistRemovedEventArgs> OnPlaylistRemoved;
         public event EventHandler OnPlaylistMoved;
         public event EventHandler OnLoaded;
         #endregion

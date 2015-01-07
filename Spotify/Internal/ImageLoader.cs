@@ -4,32 +4,38 @@ namespace Spotify.Internal
 {
     internal static class ImageLoader
     {
+        private class AsyncLoadImageResult : AsyncCallbackResult<Image>
+        {
+            public AsyncLoadImageResult(AsyncCallback userCallback, object state)
+                : base(userCallback, state)
+            {
+            }
+
+            public void HandleImageLoaded(object sender, EventArgs e)
+            {
+                SetCallbackComplete();
+            }
+        }
+
         public delegate IntPtr ImageLoad(IntPtr p, ImageSize size);
 
         public static IAsyncResult Begin(ImageLoad load, IntPtr p, Session session, ImageSize size,
             AsyncCallback userCallback, object state)
         {
             AsyncLoadImageResult result = new AsyncLoadImageResult(userCallback, state);
-            Image image = session.CreateImage(load(p, size));
+            Image image = new Image(LibSpotify.sp_image_create_r(session.Handle, load(p, size)));
             result.Closure = image;
             image.OnLoaded += result.HandleImageLoaded;
             return result;
         }
 
-        public static System.Drawing.Image End(IAsyncResult result)
+        public static Image End(IAsyncResult result)
         {
             AsyncLoadImageResult loadImageResult = ThrowHelper.DownCast<AsyncLoadImageResult>(result, "result");
-            loadImageResult.WaitForCallbackComplete();
-
-            using (Image image = loadImageResult.Closure)
-            {
-                loadImageResult.Closure = null;
-                loadImageResult.SetCompleted(image.Error);
-                loadImageResult.CheckPendingException();
-
-                // don't Dispose() the MemoryStream, the Image will own it.
-                return System.Drawing.Image.FromStream(new System.IO.MemoryStream(image.Data));
-            }
-        } 
+            loadImageResult.WaitForCallbackComplete();            
+            loadImageResult.SetCompleted(loadImageResult.Closure.Error);
+            loadImageResult.CheckPendingException();
+            return loadImageResult.Closure;        
+        }
     }
 }

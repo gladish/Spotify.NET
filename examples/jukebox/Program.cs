@@ -12,12 +12,12 @@ namespace jukebox
         private static NAudio.Wave.WaveOut _audioSink;
         private static Spotify.Playlist _jukeboxList;
         private static Spotify.Session _session;
+        private static Spotify.Track _currentTrack;
         private static string _listname;
         private static int _trackIndex;
 
         public static void Main(string[] args)
         {
-
             string username = args[0];
             string password = args[1];
             _listname = args[2];
@@ -47,25 +47,41 @@ namespace jukebox
             if (_jukeboxList == null)
                 return;
 
-            IList<Spotify.Track> trackList = _jukeboxList.Tracks;
-            if (_trackIndex >= trackList.Count)
+            IList<Spotify.Track> tracks = _jukeboxList.Tracks;
+            if (tracks.Count == 0)
+            {
+                Console.WriteLine("jukebox: No more tracks in playlist. Waiting");
+                return;
+            }
+
+            if (_trackIndex >= tracks.Count)
             {
                 Console.WriteLine("jukebox: Not more tracks in playlist. Waiting");
                 return;
             }
 
-            Spotify.Track track = trackList[_trackIndex];
+            Spotify.Track track = tracks[_trackIndex];
 
-            // TODO: Should we override Equals() to compare handles?  
+            if (_currentTrack != null && !_currentTrack.IsClone(track))
+            {
+                _session.PlayerUnload();
+                _audioSink.Stop();
+                _audioProvider.ClearBuffer();
+                _currentTrack = null;
+            }
 
             if (track.Error != Spotify.Error.Ok)
                 return;
 
-            Console.WriteLine("jukebox: Now playing \"{0}\"...", track.Name);
+            if (_currentTrack != null && _currentTrack.IsClone(track))
+                return;
 
+            Console.WriteLine("jukebox: Now playing \"{0}\"...", track.Name);
+            
             _session.PlayerLoad(track);
             _session.PlayerPlay(true);
             _audioSink.Play();
+            _currentTrack = track;
         }
 
         private static void Environment_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -92,12 +108,16 @@ namespace jukebox
 
         private static void session_OnPlayTokenLost(object sender, EventArgs e)
         {
-
+            if (_currentTrack != null)
+            {
+                _session.PlayerUnload();
+                _currentTrack = null;
+            }
         }
 
         private static void session_OnMetadataUpdated(object sender, EventArgs e)
         {
-            //  TryJukeboxStart();    
+            TryJukeboxStart();    
         }
 
         private static void session_OnMusicDelivered(object sender, Spotify.MusicDeliveryEventArgs e)
@@ -111,19 +131,20 @@ namespace jukebox
             if (e.ErrorCode != Spotify.Error.Ok)
             {
                 Console.WriteLine("jukebox: Login failed: {0}", e.Message);
+                Environment.Exit(0);
             }
 
             Spotify.PlaylistContainer playlistContainer = session.CreatePlaylistContainer();
             playlistContainer.OnPlaylistAdded += playlistContainer_OnPlaylistAdded;
-            playlistContainer.OnPlaylistMoved += playlistContainer_OnPlaylistMoved;
+            playlistContainer.OnPlaylistRemoved += playlistContainer_OnPlaylistRemoved;
             playlistContainer.OnLoaded += playlistContainer_OnLoaded;
 
             foreach (Spotify.Playlist playlist in playlistContainer.Playlists)
             {
-                playlist.OnTracksAdded += playlist_OnTracksAdded;
-                playlist.OnTracksRemoved += playlist_OnTracksRemoved;
-                playlist.OnTracksMoved += playlist_OnTracksMoved;
-                playlist.OnRenamed += playlist_OnRenamed;
+                playlist.TracksAdded += playlist_OnTracksAdded;
+                playlist.TracksRemoved += playlist_OnTracksRemoved;
+                playlist.TracksMoved += playlist_OnTracksMoved;
+                playlist.Renamed += playlist_OnRenamed;
 
                 if (playlist.Name.Equals(_listname))
                 {
@@ -143,37 +164,85 @@ namespace jukebox
 
         private static void playlist_OnRenamed(object sender, EventArgs e)
         {
-
+            Spotify.Playlist playlist = (Spotify.Playlist)sender;
+            if (playlist.Name.Equals(_listname))
+            {
+                _jukeboxList = playlist;
+                _trackIndex = 0;
+                TryJukeboxStart();
+            }
+            else
+            {
+                Console.WriteLine("jukebox: current playlist renamed to: {0}", playlist.Name);
+                _jukeboxList = null;
+                _currentTrack = null;
+                _session.PlayerUnload();
+            }
         }
 
         private static void playlist_OnTracksMoved(object sender, Spotify.PlaylistTracksMovedEventArgs e)
         {
+            Spotify.Playlist playlist = (Spotify.Playlist)sender;
+            if (!playlist.IsClone(_jukeboxList))
+                return;
 
+            Console.WriteLine("jukebox: {0} tracks were moved", e.Tracks.Count);
+            TryJukeboxStart();
         }
 
         private static void playlist_OnTracksRemoved(object sender, Spotify.PlaylistTracksRemovedEventArgs e)
         {
+            Spotify.Playlist playlist = (Spotify.Playlist)sender;
+            if (!playlist.IsClone(_jukeboxList))
+                return;
+           
+            int k = 0;            
+            for (int i = 0; i < e.Tracks.Count; ++i)
+            {
+                if (e.Tracks[i] < _trackIndex)
+                    ++k;
+            }
 
+            _trackIndex = k;
+            TryJukeboxStart();
         }
 
         private static void playlist_OnTracksAdded(object sender, Spotify.PlaylistTracksAddedEventArgs e)
         {
+            Spotify.Playlist playlist = (Spotify.Playlist)sender;
+            if (!playlist.IsClone(_jukeboxList))
+                return;
 
+            TryJukeboxStart();
         }
 
         private static void playlistContainer_OnLoaded(object sender, EventArgs e)
         {
-
+            Spotify.PlaylistContainer playlistContainer = (Spotify.PlaylistContainer)sender;
+            Console.WriteLine("jukebox: Rootlist synchronized ({0} playlists)", playlistContainer.Playlists.Count);
         }
 
-        private static void playlistContainer_OnPlaylistMoved(object sender, EventArgs e)
+        private static void playlistContainer_OnPlaylistRemoved(object sender, Spotify.PlaylistRemovedEventArgs e)
         {
-
+            e.Playlist.TracksAdded -= playlist_OnTracksAdded;
+            e.Playlist.TracksRemoved -= playlist_OnTracksRemoved;
+            e.Playlist.TracksMoved -= playlist_OnTracksMoved;
+            e.Playlist.Renamed -= playlist_OnRenamed;
+            
         }
 
         private static void playlistContainer_OnPlaylistAdded(object sender, Spotify.PlaylistAddedEventArgs e)
-        {
+        {            
+            e.Playlist.TracksAdded += playlist_OnTracksAdded;
+            e.Playlist.TracksRemoved += playlist_OnTracksRemoved;
+            e.Playlist.TracksMoved += playlist_OnTracksMoved;
+            e.Playlist.Renamed += playlist_OnRenamed;
 
+            if (e.Playlist.Name.Equals(_listname))
+            {
+                _jukeboxList = e.Playlist;
+                TryJukeboxStart();
+            }
         }
 
         private static void InitAudio()

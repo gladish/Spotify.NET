@@ -1,47 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 using Spotify.Internal;
 
 namespace Spotify
 {
-    public class Playlist : DomainObject
+    public class Playlist : DomainObject //, INotifyPropertyChanged
     {
         #region Events
-        public event EventHandler<PlaylistTracksAddedEventArgs> OnTracksAdded;
-        public event EventHandler<PlaylistTracksRemovedEventArgs> OnTracksRemoved;
-        public event EventHandler<PlaylistTracksMovedEventArgs> OnTracksMoved;
-        public event EventHandler OnRenamed;
-        public event EventHandler OnStateChanged;
-        public event EventHandler<PlaylistUpdateInProgrssEventArgs> OnUpdateInProgress;
-        public event EventHandler OnMetadataUpdated;
-        public event EventHandler<PlaylistTrackCreatedChangedEventArgs> OnTrackCreatedChanged;
-        public event EventHandler<PlaylistTrackSeenChangedEventArgs> OnTrackSeenChanged;
-        public event EventHandler<PlaylistDescriptionChangedEventArgs> OnDescriptionChanged; 
+        public event EventHandler<PlaylistTracksAddedEventArgs> TracksAdded;
+        public event EventHandler<PlaylistTracksRemovedEventArgs> TracksRemoved;
+        public event EventHandler<PlaylistTracksMovedEventArgs> TracksMoved;
+        public event EventHandler Renamed;
+        public event EventHandler StateChanged;
+        public event EventHandler<PlaylistUpdateInProgrssEventArgs> UpdateInProgress;
+        public event EventHandler MetadataUpdated;
+        public event EventHandler<PlaylistTrackCreatedChangedEventArgs> TrackCreatedChanged;
+        public event EventHandler<PlaylistTrackSeenChangedEventArgs> TrackSeenChanged;
+        public event EventHandler<PlaylistDescriptionChangedEventArgs> DescriptionChanged;
+
+        //public event PropertyChangedEventHandler PropertyChanged;
 
         // TODO ImageChanged
 
-        public event EventHandler OnSubscribersChanged;
-        public event EventHandler<PlaylistTrackMessageChangedEventArgs> OnTrackMessageChanged;
+        public event EventHandler SubscribersChanged;
+        public event EventHandler<PlaylistTrackMessageChangedEventArgs> TrackMessageChanged;
         #endregion
 
         internal Playlist(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_playlist_add_ref_r, LibSpotify.sp_playlist_release_r, preIncremented)
         {
             _callbacks = new LibSpotify.sp_playlist_callbacks();
-            _callbacks.description_changed = RaiseDescriptionChanged;
-            _callbacks.playlist_metadata_updated = RaiseMetadataUpdated;
-            _callbacks.playlist_renamed = RaiseRenamed;
-            _callbacks.playlist_state_changed = RaiseStateChanged;
-            _callbacks.playlist_update_in_progress = RaiseUpdateInProgress;
-            _callbacks.subscribers_changed = RaiseSubscribersChanged;
-            _callbacks.track_created_changed = RaiseCreatedChanged;
-            _callbacks.track_message_changed = RaiseMessageChanged;
-            _callbacks.track_seen_changed = RaiseSeenChanged;
-            _callbacks.tracks_added = RaiseTracksAdded;
-            _callbacks.tracks_moved = RaiseTracksMoved;
-            _callbacks.tracks_removed = RaiseTracksRemoved;
+            _callbacks.description_changed = OnDescriptionChanged;
+            _callbacks.playlist_metadata_updated = OnMetadataUpdated;
+            _callbacks.playlist_renamed = OnRenamed;
+            _callbacks.playlist_state_changed = OnStateChanged;
+            _callbacks.playlist_update_in_progress = OnUpdateInProgress;
+            _callbacks.subscribers_changed = OnSubscribersChanged;
+            _callbacks.track_created_changed = OnCreatedChanged;
+            _callbacks.track_message_changed = OnMessageChanged;
+            _callbacks.track_seen_changed = OnSeenChanged;
+            _callbacks.tracks_added = OnTracksAdded;
+            _callbacks.tracks_moved = OnTracksMoved;
+            _callbacks.tracks_removed = OnTracksRemoved;
             
             ThrowHelper.ThrowIfError(LibSpotify.sp_playlist_add_callbacks_r(Handle, ref _callbacks, IntPtr.Zero));
         }
@@ -61,12 +64,35 @@ namespace Spotify
             }
         }
 
+
+        // I'm still unsure whether exposing NumTracks/TrackAt(int) is better than a List of Tracks. The obvious
+        // advantage is not creating a list of Disposable objects everytime someone touches the Tracks. Maybe caching
+        // the results would be better and just invalidating on changes
+        // The List also allows Linq to be used.
+        private int NumTracks
+        {
+            get
+            {
+                return LibSpotify.sp_playlist_num_tracks_r(Handle);
+            }
+        }
+
+        private Track TrackAt(int index)
+        {
+
+            return ListItem(index, p => { return new Track(p, false); },
+                LibSpotify.sp_playlist_num_tracks_r, LibSpotify.sp_playlist_track_r);
+        }
+
+
+        private IList<Track> _tracks = null;
         public IList<Track> Tracks
         {
             get
             {
-                return MakeList<Track>(p => { return new Track(p, false); }, LibSpotify.sp_playlist_num_tracks_r,
-                    LibSpotify.sp_playlist_track_r);
+                if (_tracks == null)
+                    _tracks = MakeList(p => { return new Track(p, false); }, LibSpotify.sp_playlist_num_tracks_r, LibSpotify.sp_playlist_track_r);
+                return _tracks;
             }
         }
 
@@ -138,11 +164,14 @@ namespace Spotify
             }
         }
 
+        public IList<string> _subscribers = null;
         public IList<string> Subscribers
         {
             get
             {
-                return LibSpotify.GetPlaylistSubscribers(Handle);
+                if (_subscribers == null)
+                    _subscribers = LibSpotify.GetPlaylistSubscribers(Handle);
+                return _subscribers;
             }
         }
         #endregion
@@ -232,10 +261,9 @@ namespace Spotify
         {
             return LibSpotify.ReadUtf8(LibSpotify.sp_playlist_track_message_r(Handle, t.Index));
         }
-
         #endregion
 
-        #region Private Methods
+        #region Private Methods        
         private static void ThrowIfDuplicates(IEnumerable<int> e)
         {
             // check for duplicates
@@ -249,85 +277,89 @@ namespace Spotify
                     string.Join(",", query.ToList()));
         }
 
-        private void RaiseDescriptionChanged(IntPtr playlist, IntPtr description, IntPtr state)
+        private void OnDescriptionChanged(IntPtr playlist, IntPtr description, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnDescriptionChanged,
+            Internal.EventDispatcher.Dispatch(this, playlist, DescriptionChanged,
                 new PlaylistDescriptionChangedEventArgs(LibSpotify.ReadUtf8(description)));
         }
 
-        private void RaiseMetadataUpdated(IntPtr playlist, IntPtr state)
+        private void OnMetadataUpdated(IntPtr playlist, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnMetadataUpdated, EventArgs.Empty);
+            Internal.EventDispatcher.Dispatch(this, playlist, MetadataUpdated, EventArgs.Empty);
         }
 
-        private void RaiseRenamed(IntPtr playlist, IntPtr state)
+        private void OnRenamed(IntPtr playlist, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnRenamed, EventArgs.Empty);
+            Internal.EventDispatcher.Dispatch(this, playlist, Renamed, EventArgs.Empty);
         }
 
-        private void RaiseStateChanged(IntPtr playlist, IntPtr state)
+        private void OnStateChanged(IntPtr playlist, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnStateChanged, EventArgs.Empty);
+            Internal.EventDispatcher.Dispatch(this, playlist, StateChanged, EventArgs.Empty);
         }
 
-        private void RaiseUpdateInProgress(IntPtr playlist, bool done, IntPtr state)
+        private void OnUpdateInProgress(IntPtr playlist, bool done, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnUpdateInProgress,
+            Internal.EventDispatcher.Dispatch(this, playlist, UpdateInProgress,
                 new PlaylistUpdateInProgrssEventArgs(done));
         }
 
-        private static IList<Track> FromArrayOfPointers(IntPtr[] p, int n)
+        private static IList<int> ToList(int[] tracks, int n)
         {
-            List<Track> list = new List<Track>();
+            List<int> list = new List<int>();
             for (int i = 0; i < n; ++i)
-                list.Add(new Track(p[i], false));
+                list.Add(tracks[i]);
             return list;
         }
 
-        private void RaiseTracksAdded(IntPtr playlist, IntPtr[] tracks, int numTracks, int position, IntPtr state)
-        {         
-            Internal.EventDispatcher.Dispatch(this, playlist, OnTracksAdded,
-                new PlaylistTracksAddedEventArgs(FromArrayOfPointers(tracks, numTracks), position));
-        }
-
-        private void RaiseTracksRemoved(IntPtr playlist, IntPtr[] tracks, int numTracks, IntPtr state)
-        {            
-            Internal.EventDispatcher.Dispatch(this, playlist, OnTracksRemoved,
-                new PlaylistTracksRemovedEventArgs(FromArrayOfPointers(tracks, numTracks)));
-        }
-
-        private void RaiseTracksMoved(IntPtr playlist, IntPtr[] tracks, int numTracks, int newPosition, IntPtr state)
-        {           
-            Internal.EventDispatcher.Dispatch(this, playlist, OnTracksMoved,
-                new PlaylistTracksMovedEventArgs(FromArrayOfPointers(tracks, numTracks), newPosition));
-        }
-
-        private void RaiseCreatedChanged(IntPtr playlist, int position, IntPtr user, int when, IntPtr state)
+        private void OnTracksAdded(IntPtr playlist, int[] tracks, int numTracks, int position, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnTrackCreatedChanged,
+            _tracks = null;
+            Internal.EventDispatcher.Dispatch(this, playlist, TracksAdded,
+                new PlaylistTracksAddedEventArgs(ToList(tracks, numTracks), position));
+        }
+
+        private void OnTracksRemoved(IntPtr playlist, int[] tracks, int numTracks, IntPtr state)
+        {
+            _tracks = null;
+            Internal.EventDispatcher.Dispatch(this, playlist, TracksRemoved,
+                new PlaylistTracksRemovedEventArgs(ToList(tracks, numTracks)));
+        }
+
+        private void OnTracksMoved(IntPtr playlist, int[] tracks, int numTracks, int newPosition, IntPtr state)
+        {
+            _tracks = null;
+            Internal.EventDispatcher.Dispatch(this, playlist, TracksMoved,
+                new PlaylistTracksMovedEventArgs(ToList(tracks, numTracks), newPosition));
+        }
+
+        private void OnCreatedChanged(IntPtr playlist, int position, IntPtr user, int when, IntPtr state)
+        {
+            Internal.EventDispatcher.Dispatch(this, playlist, TrackCreatedChanged,
                 new PlaylistTrackCreatedChangedEventArgs(position, new User(user, false), TimeUtil.FromUnixTimeSeconds(when)));
         }
 
-        private void RaiseSeenChanged(IntPtr playlist, int position, bool seen, IntPtr state)
+        private void OnSeenChanged(IntPtr playlist, int position, bool seen, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnTrackSeenChanged,
+            Internal.EventDispatcher.Dispatch(this, playlist, TrackSeenChanged,
                   new PlaylistTrackSeenChangedEventArgs(position, seen));
         }
 
-        private void RaiseImageChanged(IntPtr playlist, IntPtr image, IntPtr state)
+        private void OnImageChanged(IntPtr playlist, IntPtr image, IntPtr state)
         {
             // TODO
         }
 
-        private void RaiseMessageChanged(IntPtr playlist, int position, IntPtr message, IntPtr state)
+        private void OnMessageChanged(IntPtr playlist, int position, IntPtr message, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnTrackMessageChanged,
+            Internal.EventDispatcher.Dispatch(this, playlist, TrackMessageChanged,
                 new PlaylistTrackMessageChangedEventArgs(position, LibSpotify.ReadUtf8(message)));
         }
 
-        private void RaiseSubscribersChanged(IntPtr playlist, IntPtr state)
+        private void OnSubscribersChanged(IntPtr playlist, IntPtr state)
         {
-            Internal.EventDispatcher.Dispatch(this, playlist, OnSubscribersChanged, EventArgs.Empty);
+            _subscribers = null;
+            Internal.EventDispatcher.Dispatch(this, playlist, SubscribersChanged, EventArgs.Empty);
         }
         #endregion
 

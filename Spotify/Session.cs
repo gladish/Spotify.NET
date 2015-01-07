@@ -442,11 +442,6 @@ namespace Spotify
             return session;
         }
 
-        internal Internal.Image CreateImage(IntPtr imageId)
-        {
-            return new Internal.Image(LibSpotify.sp_image_create_r(Handle, imageId));
-        }
-
         public void ProcessEvents()
         {
             TimeSpan nextTimeout = TimeSpan.FromHours(24);
