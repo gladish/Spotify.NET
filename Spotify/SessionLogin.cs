@@ -29,7 +29,7 @@ namespace Spotify
         public IAsyncResult BeginLogin(LoginParameters loginParams, AsyncCallback userCallback, object stateObject)
         {
             AsyncLoginResult result = new AsyncLoginResult(userCallback, stateObject);
-            this.OnLoggedIn += result.HandleLoggedIn;
+            this.LoggedIn += result.HandleLoggedIn;
 
             ThrowHelper.ThrowIfError(LibSpotify.sp_session_login_r(Handle, loginParams.UserName,
                 loginParams.Password, loginParams.RememberMe, IntPtr.Zero));

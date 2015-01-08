@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Linq;
 
 using Spotify.Internal;
@@ -21,7 +22,7 @@ namespace Spotify
         public event EventHandler<PlaylistTrackSeenChangedEventArgs> TrackSeenChanged;
         public event EventHandler<PlaylistDescriptionChangedEventArgs> DescriptionChanged;
 
-        //public event PropertyChangedEventHandler PropertyChanged;
+        // public event PropertyChangedEventHandler PropertyChanged;
 
         // TODO ImageChanged
 
@@ -64,7 +65,6 @@ namespace Spotify
             }
         }
 
-
         // I'm still unsure whether exposing NumTracks/TrackAt(int) is better than a List of Tracks. The obvious
         // advantage is not creating a list of Disposable objects everytime someone touches the Tracks. Maybe caching
         // the results would be better and just invalidating on changes
@@ -83,9 +83,7 @@ namespace Spotify
             return ListItem(index, p => { return new Track(p, false); },
                 LibSpotify.sp_playlist_num_tracks_r, LibSpotify.sp_playlist_track_r);
         }
-
-
-        private IList<Track> _tracks = null;
+        
         public IList<Track> Tracks
         {
             get
@@ -93,7 +91,7 @@ namespace Spotify
                 if (_tracks == null)
                     _tracks = MakeList(p => { return new Track(p, false); }, LibSpotify.sp_playlist_num_tracks_r, LibSpotify.sp_playlist_track_r);
                 return _tracks;
-            }
+            }            
         }
 
         public string Name
@@ -156,21 +154,20 @@ namespace Spotify
             }
         }
 
-        public int NumSubscribers
+        private int NumSubscribers
         {
             get
             {
                 return Convert.ToInt32(LibSpotify.sp_playlist_num_subscribers_r(Handle));
             }
         }
-
-        public IList<string> _subscribers = null;
+        
         public IList<string> Subscribers
         {
             get
             {
                 if (_subscribers == null)
-                    _subscribers = LibSpotify.GetPlaylistSubscribers(Handle);
+                    _subscribers = MarshalPlaylistSubscribers(Handle);
                 return _subscribers;
             }
         }
@@ -263,7 +260,29 @@ namespace Spotify
         }
         #endregion
 
-        #region Private Methods        
+        #region Private Methods   
+        private static IList<string> MarshalPlaylistSubscribers(IntPtr playlist)
+        {
+            List<string> subscribers = new List<string>();
+
+            IntPtr p = LibSpotify.sp_playlist_subscribers_r(playlist);
+            if (p != IntPtr.Zero)
+            {
+                int n = Marshal.ReadInt32(p);
+
+                int offset = Marshal.SizeOf(typeof(Int32));
+                for (int i = 0; i < n; ++i)
+                {
+                    subscribers.Add(LibSpotify.ReadUtf8(Marshal.ReadIntPtr(p, offset)));
+                    offset += Marshal.SizeOf(typeof(IntPtr));
+                }
+
+                LibSpotify.sp_playlist_subscribers_free_r(p);
+            }
+
+            return subscribers;
+        }
+
         private static void ThrowIfDuplicates(IEnumerable<int> e)
         {
             // check for duplicates
@@ -364,6 +383,8 @@ namespace Spotify
         #endregion
 
         #region Fields
+        private IList<Track> _tracks = null;
+        private IList<string> _subscribers = null;
         private LibSpotify.sp_playlist_callbacks _callbacks;
         #endregion
     }

@@ -7,12 +7,12 @@ namespace Spotify
 {
     public class Image : DomainObject
     {
-        public event EventHandler OnLoaded;
+        public event EventHandler Loaded;
 
         internal Image(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_image_add_ref_r, LibSpotify.sp_image_release_r, preIncremented)
         {
-            ThrowHelper.ThrowIfError(LibSpotify.sp_image_add_load_callback_r(Handle, HandleImageLoaded, IntPtr.Zero));
+            ThrowHelper.ThrowIfError(LibSpotify.sp_image_add_load_callback_r(Handle, OnImageLoaded, IntPtr.Zero));
         }
 
         public System.Drawing.Image ToImage()
@@ -28,15 +28,15 @@ namespace Spotify
 
             if (disposing)
             {
-                LibSpotify.sp_image_remove_load_callback_r(Handle, HandleImageLoaded, IntPtr.Zero);
+                LibSpotify.sp_image_remove_load_callback_r(Handle, OnImageLoaded, IntPtr.Zero);
             }
 
             base.Dispose(disposing);
         }
 
-        private void HandleImageLoaded(IntPtr image, IntPtr user)
+        private void OnImageLoaded(IntPtr image, IntPtr user)
         {
-            EventDispatcher.Dispatch(this, image, OnLoaded, EventArgs.Empty);
+            EventDispatcher.Dispatch(this, image, Loaded, EventArgs.Empty);
         }
 
         public bool IsLoaded

@@ -25,7 +25,7 @@ namespace Spotify.Internal
             AsyncLoadImageResult result = new AsyncLoadImageResult(userCallback, state);
             Image image = new Image(LibSpotify.sp_image_create_r(session.Handle, load(p, size)));
             result.Closure = image;
-            image.OnLoaded += result.HandleImageLoaded;
+            image.Loaded += result.HandleImageLoaded;
             return result;
         }
 

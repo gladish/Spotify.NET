@@ -9,20 +9,20 @@ namespace Spotify
     public class PlaylistContainer : DomainObject
     {
         #region Events
-        public event EventHandler<PlaylistAddedEventArgs> OnPlaylistAdded;
-        public event EventHandler<PlaylistRemovedEventArgs> OnPlaylistRemoved;
-        public event EventHandler OnPlaylistMoved;
-        public event EventHandler OnLoaded;
+        public event EventHandler<PlaylistAddedEventArgs> PlaylistAdded;
+        public event EventHandler<PlaylistRemovedEventArgs> PlaylistRemoved;
+        public event EventHandler PlaylistMoved;
+        public event EventHandler Loaded;
         #endregion
 
         internal PlaylistContainer(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_playlistcontainer_add_ref_r, LibSpotify.sp_playlistcontainer_release_r, preIncremented)
         {
             LibSpotify.sp_playlistcontainer_callbacks callbacks = new LibSpotify.sp_playlistcontainer_callbacks();
-            callbacks.playlist_added = RaisePlaylistAdded;
-            callbacks.playlist_removed = RaisePlaylistRemoved;
-            callbacks.playlist_moved = RaisePlaylistMoved;
-            callbacks.container_loaded = RaiseContainerLoaded;
+            callbacks.playlist_added = OnPlaylistAdded;
+            callbacks.playlist_removed = OnPlaylistRemoved;
+            callbacks.playlist_moved = OnPlaylistMoved;
+            callbacks.container_loaded = OnContainerLoaded;
 
             ThrowHelper.ThrowIfError(LibSpotify.sp_playlistcontainer_add_callbacks_r(Handle,
                 ref callbacks, IntPtr.Zero));
@@ -134,26 +134,26 @@ namespace Spotify
         
 
         #region Private Methods
-        private void RaiseContainerLoaded(IntPtr playlistContainer, IntPtr state)
+        private void OnContainerLoaded(IntPtr playlistContainer, IntPtr state)
         {
-            EventDispatcher.Dispatch(this, playlistContainer, OnLoaded, EventArgs.Empty);
+            EventDispatcher.Dispatch(this, playlistContainer, Loaded, EventArgs.Empty);
         }
 
-        private void RaisePlaylistAdded(IntPtr playlistContainer, IntPtr playlist, int position, IntPtr state)
+        private void OnPlaylistAdded(IntPtr playlistContainer, IntPtr playlist, int position, IntPtr state)
         {
-            EventDispatcher.Dispatch(this, playlistContainer, OnPlaylistAdded,
+            EventDispatcher.Dispatch(this, playlistContainer, PlaylistAdded,
                 new PlaylistAddedEventArgs(playlist, position));
         }
 
-        private void RaisePlaylistMoved(IntPtr playlistContainer, IntPtr playlist, int position, int newPosition, IntPtr state)
+        private void OnPlaylistMoved(IntPtr playlistContainer, IntPtr playlist, int position, int newPosition, IntPtr state)
         {
-            EventDispatcher.Dispatch(this, playlistContainer, OnPlaylistMoved,
+            EventDispatcher.Dispatch(this, playlistContainer, PlaylistMoved,
                 new PlaylistMovedEventArgs(playlist, position, newPosition));
         }
 
-        private void RaisePlaylistRemoved(IntPtr playlistContainer, IntPtr playlist, int position, IntPtr state)
+        private void OnPlaylistRemoved(IntPtr playlistContainer, IntPtr playlist, int position, IntPtr state)
         {
-            EventDispatcher.Dispatch(this, playlistContainer, OnPlaylistRemoved,
+            EventDispatcher.Dispatch(this, playlistContainer, PlaylistRemoved,
                 new PlaylistRemovedEventArgs(playlist, position));
         }
         #endregion

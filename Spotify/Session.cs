@@ -11,31 +11,26 @@ namespace Spotify
 {
     public partial class Session : IDisposable
     {
-        private Session()
-        {
-            OnNotifyMainThread += HandleOnNotifyMainThread;
-        }
-
-        public event EventHandler OnNotifyMainThread;
-        public event EventHandler<LoggedInEventArgs> OnLoggedIn;
-        public event EventHandler OnLoggedOut;
-        public event EventHandler OnMetadataUpdated;
-        public event EventHandler<ConnectionErrorEventArgs> OnConnectionError;
-        public event EventHandler<MessageToUserEventArgs> OnMessageToUser;
-        public event EventHandler<LogMessageEventArgs> OnLogMessage;
-        public event EventHandler OnEndOfTrack;
-        public event EventHandler<StreamingErrorEventArgs> OnStreamingError;
-        public event EventHandler OnUserInfoUpdated;
-        public event EventHandler OnStartPlayback;
-        public event EventHandler OnStopPlayback;
-        public event EventHandler OnOfflineStatusUpdated;
-        public event EventHandler<OfflineErrorEventArgs> OnOfflineError;
-        public event EventHandler<CredentialsBlobUpdatedEventArgs> OnCredentialsBlobUpdated;
-        public event EventHandler OnConnectionStateUpdated;
-        public event EventHandler<ScrobbleErrorEventArgs> OnScrobbleError;
-        public event EventHandler<PrivateSessonModeChangedEventArgs> OnPrivateSessionModeChanged;
-        public event EventHandler<MusicDeliveryEventArgs> OnMusicDelivered;
-        public event EventHandler OnPlayTokenLost;
+        public event EventHandler NotifyMainThread;
+        public event EventHandler<LoggedInEventArgs> LoggedIn;
+        public event EventHandler LoggedOut;
+        public event EventHandler MetadataUpdated;
+        public event EventHandler<ConnectionErrorEventArgs> ConnectionError;
+        public event EventHandler<MessageToUserEventArgs> MessageToUser;
+        public event EventHandler<LogMessageEventArgs> LogMessage;
+        public event EventHandler EndOfTrack;
+        public event EventHandler<StreamingErrorEventArgs> StreamingError;
+        public event EventHandler UserInfoUpdated;
+        public event EventHandler StartPlayback;
+        public event EventHandler StopPlayback;
+        public event EventHandler OfflineStatusUpdated;
+        public event EventHandler<OfflineErrorEventArgs> OfflineError;
+        public event EventHandler<CredentialsBlobUpdatedEventArgs> CredentialsBlobUpdated;
+        public event EventHandler ConnectionStateUpdated;
+        public event EventHandler<ScrobbleErrorEventArgs> ScrobbleError;
+        public event EventHandler<PrivateSessonModeChangedEventArgs> PrivateSessionModeChanged;
+        public event EventHandler<MusicDeliveryEventArgs> MusicDelivered;
+        public event EventHandler PlayTokenLost;
 
         #region Properties
         public string RememberedUser
@@ -394,29 +389,29 @@ namespace Spotify
                 config.userdata = IntPtr.Zero;
 
                 session._callbacks = new LibSpotify.sp_session_callbacks();
-                session._callbacks.logged_in = session.RaiseLoggedInEvent;
-                session._callbacks.logged_out = session.RaiseLoggedOutEvent;
-                session._callbacks.notify_main_thread = session.RaiseNotifyMainThread;
+                session._callbacks.logged_in = session.OnLoggedInEvent;
+                session._callbacks.logged_out = session.OnLoggedOutEvent;
+                session._callbacks.notify_main_thread = session.OnNotifyMainThread;
 
-                session._callbacks.log_message = session.RaiseLogMessage;
-                session._callbacks.metadata_updated = session.RaiseMetadataUpdated;
-                session._callbacks.connection_error = session.RaiseConnectionError;
-                session._callbacks.message_to_user = session.RaiseMessageToUser;
-                session._callbacks.music_delivery = session.RaiseMusicDelivery;
-                session._callbacks.play_token_lost = session.RaisePlayTokenLost;
-                session._callbacks.log_message = session.RaiseLogMessage;
-                session._callbacks.end_of_track = session.RaiseEndOfTrack;
-                session._callbacks.streaming_error = session.RaiseStreamingError;
-                session._callbacks.userinfo_updated = session.RaiseUserInfoUpdated;
-                session._callbacks.start_playback = session.RaiseStartPlayback;
-                session._callbacks.stop_playback = session.RaiseStopPlayback;
-                session._callbacks.offline_status_updated = session.RaiseOfflineStatusUpdated;
-                session._callbacks.get_audio_buffer_stats = session.RaiseGetAudioBufferStats;
-                session._callbacks.offline_error = session.RaiseOfflineError;
-                session._callbacks.credentials_blob_updated = session.RaiseCredentialsBlobUpdated;
-                session._callbacks.connectionstate_updated = session.RaiseConnectionStateUpdated;
-                session._callbacks.scrobble_error = session.RaiseScrobbleError;
-                session._callbacks.private_session_mode_changed = session.RaisePrivateSessionModeChanged;
+                session._callbacks.log_message = session.OnLogMessage;
+                session._callbacks.metadata_updated = session.OnMetadataUpdated;
+                session._callbacks.connection_error = session.OnConnectionError;
+                session._callbacks.message_to_user = session.OnMessageToUser;
+                session._callbacks.music_delivery = session.OnMusicDelivery;
+                session._callbacks.play_token_lost = session.OnPlayTokenLost;
+                session._callbacks.log_message = session.OnLogMessage;
+                session._callbacks.end_of_track = session.OnEndOfTrack;
+                session._callbacks.streaming_error = session.OnStreamingError;
+                session._callbacks.userinfo_updated = session.OnUserInfoUpdated;
+                session._callbacks.start_playback = session.OnStartPlayback;
+                session._callbacks.stop_playback = session.OnStopPlayback;
+                session._callbacks.offline_status_updated = session.OnOfflineStatusUpdated;
+                session._callbacks.get_audio_buffer_stats = session.OnGetAudioBufferStats;
+                session._callbacks.offline_error = session.OnOfflineError;
+                session._callbacks.credentials_blob_updated = session.OnCredentialsBlobUpdated;
+                session._callbacks.connectionstate_updated = session.OnConnectionStateUpdated;
+                session._callbacks.scrobble_error = session.OnScrobbleError;
+                session._callbacks.private_session_mode_changed = session.OnPrivateSessionModeChanged;
 
                 callbacksHandle = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(LibSpotify.sp_session_callbacks)));
                 Marshal.StructureToPtr(session._callbacks, callbacksHandle, false);
@@ -424,7 +419,7 @@ namespace Spotify
 
                 IntPtr ptr = IntPtr.Zero;
 
-                // This call results in a callback to RaiseNotifyMainThread, but the
+                // This call results in a callback to OnNotifyMainThread, but the
                 // actual _handle has not been set yet.
                 session._running = true;
                 ThrowHelper.ThrowIfError(LibSpotify.sp_session_create_r(ref config, ref ptr));
@@ -466,12 +461,7 @@ namespace Spotify
             _notifyEvent.Set();
             _thread.Join();
             _thread = null;
-        }
-
-        private void HandleOnNotifyMainThread(object sender, EventArgs e)
-        {
-            _notifyEvent.Set();
-        }
+        }        
 
         private TimeSpan ProcessEventsInternal()
         {
@@ -483,7 +473,7 @@ namespace Spotify
             return TimeSpan.FromMilliseconds(nextTimeout);
         }
 
-        private int RaiseMusicDelivery(IntPtr sessionHandle, IntPtr audioFormatHandle, IntPtr frames, int numFrames)
+        private int OnMusicDelivery(IntPtr sessionHandle, IntPtr audioFormatHandle, IntPtr frames, int numFrames)
         {
             if (numFrames == 0)
                 return 0;
@@ -498,7 +488,7 @@ namespace Spotify
 
             Marshal.Copy(frames, pcmData, 0, n);
 
-            EventDispatcher.Dispatch(this, sessionHandle, OnMusicDelivered,
+            EventDispatcher.Dispatch(this, sessionHandle, MusicDelivered,
                 new MusicDeliveryEventArgs(pcmData, audioFormat));
 
             pcmData = null;
@@ -520,124 +510,125 @@ namespace Spotify
             return audioFormat.Channels * sampleTypeSize;
         }
 
-        #region RaiseEvents
-        private void RaiseLoggedInEvent(IntPtr sessionHandle, Error error)
+        #region OnEvents
+        private void OnLoggedInEvent(IntPtr sessionHandle, Error error)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnLoggedIn,
+            EventDispatcher.Dispatch(this, sessionHandle, LoggedIn,
                 new LoggedInEventArgs(error));
         }
 
-        private void RaiseLoggedOutEvent(IntPtr sessionHandle)
+        private void OnLoggedOutEvent(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnLoggedOut,
+            EventDispatcher.Dispatch(this, sessionHandle, LoggedOut,
                 EventArgs.Empty);
         }
 
-        private void RaiseMetadataUpdated(IntPtr sessionHandle)
+        private void OnMetadataUpdated(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnMetadataUpdated,
+            EventDispatcher.Dispatch(this, sessionHandle, MetadataUpdated,
                 EventArgs.Empty);
         } 
 
-        private void RaiseConnectionError(IntPtr sessionHandle, Error e)
+        private void OnConnectionError(IntPtr sessionHandle, Error e)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnConnectionError,
+            EventDispatcher.Dispatch(this, sessionHandle, ConnectionError,
                 new ConnectionErrorEventArgs(e));
         }
 
-        private void RaiseMessageToUser(IntPtr sessionHandle, IntPtr message)
+        private void OnMessageToUser(IntPtr sessionHandle, IntPtr message)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnMessageToUser,
+            EventDispatcher.Dispatch(this, sessionHandle, MessageToUser,
                 new MessageToUserEventArgs(Marshal.PtrToStringAnsi(message)));
         }
 
-        private void RaiseNotifyMainThread(IntPtr sessionHandle)
+        private void OnNotifyMainThread(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnNotifyMainThread,
+            _notifyEvent.Set();
+            EventDispatcher.Dispatch(this, sessionHandle, NotifyMainThread,
                 EventArgs.Empty);
         }
 
-        private void RaisePlayTokenLost(IntPtr sessionHandle)
+        private void OnPlayTokenLost(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnPlayTokenLost, 
+            EventDispatcher.Dispatch(this, sessionHandle, PlayTokenLost, 
                 EventArgs.Empty);
         }
 
-        private void RaiseLogMessage(IntPtr sessionHandle, IntPtr message)
+        private void OnLogMessage(IntPtr sessionHandle, IntPtr message)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnLogMessage,
+            EventDispatcher.Dispatch(this, sessionHandle, LogMessage,
                 new LogMessageEventArgs(Marshal.PtrToStringAnsi(message)));
         }
 
-        private void RaiseEndOfTrack(IntPtr sessionHandle)
+        private void OnEndOfTrack(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnEndOfTrack, 
+            EventDispatcher.Dispatch(this, sessionHandle, EndOfTrack, 
                 EventArgs.Empty);
         }
 
-        private void RaiseStreamingError(IntPtr sessionHandle, Error e)
+        private void OnStreamingError(IntPtr sessionHandle, Error e)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnStreamingError, 
+            EventDispatcher.Dispatch(this, sessionHandle, StreamingError, 
                 new StreamingErrorEventArgs(e));
         }
 
-        private void RaiseUserInfoUpdated(IntPtr sessionHandle)
+        private void OnUserInfoUpdated(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnUserInfoUpdated, 
+            EventDispatcher.Dispatch(this, sessionHandle, UserInfoUpdated, 
                 EventArgs.Empty);
         }
 
-        private void RaiseStartPlayback(IntPtr sessionHandle)
+        private void OnStartPlayback(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnStartPlayback, 
+            EventDispatcher.Dispatch(this, sessionHandle, StartPlayback, 
                 EventArgs.Empty);
         }
 
-        private void RaiseStopPlayback(IntPtr sessionHandle)
+        private void OnStopPlayback(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnStopPlayback, 
+            EventDispatcher.Dispatch(this, sessionHandle, StopPlayback, 
                 EventArgs.Empty);
         }
 
-        private void RaiseGetAudioBufferStats(IntPtr sessionHandle, IntPtr statsHandle)
+        private void OnGetAudioBufferStats(IntPtr sessionHandle, IntPtr statsHandle)
         {
             AudioBufferStats stats = LibSpotify.AudioBufferStatsFromHandle(statsHandle);
             //Dispatch(sessionHandle, OnAud)
         }
 
-        private void RaiseOfflineStatusUpdated(IntPtr sessionHandle)
+        private void OnOfflineStatusUpdated(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnOfflineStatusUpdated, 
+            EventDispatcher.Dispatch(this, sessionHandle, OfflineStatusUpdated, 
                 EventArgs.Empty);
         }
 
-        private void RaiseOfflineError(IntPtr sessionHandle, Error e)
+        private void OnOfflineError(IntPtr sessionHandle, Error e)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnOfflineError, 
+            EventDispatcher.Dispatch(this, sessionHandle, OfflineError, 
                 new OfflineErrorEventArgs(e));
         }
 
-        private void RaiseCredentialsBlobUpdated(IntPtr sessionHandle, IntPtr blob)
+        private void OnCredentialsBlobUpdated(IntPtr sessionHandle, IntPtr blob)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnCredentialsBlobUpdated, 
+            EventDispatcher.Dispatch(this, sessionHandle, CredentialsBlobUpdated, 
                 new CredentialsBlobUpdatedEventArgs(Marshal.PtrToStringAnsi(blob)));
         }
 
-        private void RaiseConnectionStateUpdated(IntPtr sessionHandle)
+        private void OnConnectionStateUpdated(IntPtr sessionHandle)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnConnectionStateUpdated, 
+            EventDispatcher.Dispatch(this, sessionHandle, ConnectionStateUpdated, 
                 EventArgs.Empty);
         }
 
-        private void RaiseScrobbleError(IntPtr sessionHandle, Error e)
+        private void OnScrobbleError(IntPtr sessionHandle, Error e)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnScrobbleError, 
+            EventDispatcher.Dispatch(this, sessionHandle, ScrobbleError, 
                 new ScrobbleErrorEventArgs(e));
         }
 
-        private void RaisePrivateSessionModeChanged(IntPtr sessionHandle, bool b)
+        private void OnPrivateSessionModeChanged(IntPtr sessionHandle, bool b)
         {
-            EventDispatcher.Dispatch(this, sessionHandle, OnPrivateSessionModeChanged, 
+            EventDispatcher.Dispatch(this, sessionHandle, PrivateSessionModeChanged, 
                 new PrivateSessonModeChangedEventArgs(b));
         }
         #endregion

@@ -121,7 +121,7 @@ namespace Spotify
             {
                 _handle = value;
             }
-        }
+        }    
 
         protected delegate int MakeListGetCount(IntPtr p);
         protected delegate IntPtr MakeListGetItem<T>(IntPtr p, int index);

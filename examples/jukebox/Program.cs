@@ -32,12 +32,12 @@ namespace jukebox
             sessionConfig.UserAgent = "jukebox-example";
 
             _session = Spotify.Session.Create(sessionConfig);
-            _session.OnLoggedIn += session_OnLoggedIn;
-            _session.OnMusicDelivered += session_OnMusicDelivered;
-            _session.OnMetadataUpdated += session_OnMetadataUpdated;
-            _session.OnPlayTokenLost += session_OnPlayTokenLost;
-            _session.OnLogMessage += session_OnLogMessage;
-            _session.OnEndOfTrack += session_OnEndOfTrack;
+            _session.LoggedIn += session_OnLoggedIn;
+            _session.MusicDelivered += session_OnMusicDelivered;
+            _session.MetadataUpdated += session_OnMetadataUpdated;
+            _session.PlayTokenLost += session_OnPlayTokenLost;
+            _session.LogMessage += session_OnLogMessage;
+            _session.EndOfTrack += session_OnEndOfTrack;
             _session.LoginAsync(new Spotify.LoginParameters() { UserName = username, Password = password }, null);
             _session.ProcessEvents();
         }
@@ -135,9 +135,9 @@ namespace jukebox
             }
 
             Spotify.PlaylistContainer playlistContainer = session.CreatePlaylistContainer();
-            playlistContainer.OnPlaylistAdded += playlistContainer_OnPlaylistAdded;
-            playlistContainer.OnPlaylistRemoved += playlistContainer_OnPlaylistRemoved;
-            playlistContainer.OnLoaded += playlistContainer_OnLoaded;
+            playlistContainer.PlaylistAdded += playlistContainer_OnPlaylistAdded;
+            playlistContainer.PlaylistRemoved += playlistContainer_OnPlaylistRemoved;
+            playlistContainer.Loaded += playlistContainer_OnLoaded;
 
             foreach (Spotify.Playlist playlist in playlistContainer.Playlists)
             {

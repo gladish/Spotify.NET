@@ -1140,29 +1140,7 @@ namespace Spotify
         {
             lock (_apiLock)
                 return sp_playlist_subscribers(playlist);
-        }
-
-        internal static IList<string> GetPlaylistSubscribers(IntPtr playlist)
-        {
-            List<string> subscribers = new List<string>();
-
-            IntPtr p = LibSpotify.sp_playlist_subscribers_r(playlist);
-            if (p != IntPtr.Zero)
-            {
-                int n = Marshal.ReadInt32(p);
-
-                int offset = Marshal.SizeOf(typeof(Int32));
-                for (int i = 0; i < n; ++i)
-                {
-                    subscribers.Add(ReadUtf8(Marshal.ReadIntPtr(p, offset)));
-                    offset += Marshal.SizeOf(typeof(IntPtr));
-                }
-
-                LibSpotify.sp_playlist_subscribers_free_r(p);
-            }
-
-            return subscribers;
-        }
+        }        
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
         private static extern Spotify.Error sp_playlist_subscribers_free(System.IntPtr subscribers);
