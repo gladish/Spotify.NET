@@ -101,5 +101,53 @@ namespace Spotify
                 return LibSpotify.sp_track_index_r(Handle);
             }
         }
+
+        #region Public Methods
+        public TrackAvailability GetAvailability(Session session, Track track)
+        {
+            ThrowHelper.ThrowIfNull(track, "track");
+            return LibSpotify.sp_track_get_availability_r(session.Handle, track.Handle);
+        }
+
+        public bool IsLocal(Session session)
+        {
+            ThrowHelper.ThrowIfNull(session, "session");            
+            return LibSpotify.sp_track_is_local_r(session.Handle, Handle);
+        }
+
+        public bool IsAutoLinked(Session session)
+        {
+            ThrowHelper.ThrowIfNull(session, "session");            
+            return LibSpotify.sp_track_is_autolinked_r(session.Handle, Handle);
+        }
+
+        public Track GetPlayable(Session session)
+        {
+            ThrowHelper.ThrowIfNull(session, "session");            
+            return new Track(LibSpotify.sp_track_get_playable_r(session.Handle, Handle));
+        }
+
+        public bool IsStarred(Session session)
+        {
+            ThrowHelper.ThrowIfNull(session, "session");            
+            return LibSpotify.sp_track_is_starred_r(session.Handle, Handle);
+        }
+
+        public static void SetStarred(Session session, IList<Track> tracks, bool starred)
+        {
+            ThrowHelper.ThrowIfNull(session, "session");
+            ThrowHelper.ThrowIfNull(tracks, "tracks");
+
+            if (tracks.Count > 0)
+            {
+                IntPtr[] trackHandles = new IntPtr[tracks.Count];
+                for (int i = 0; i < tracks.Count; ++i)
+                    trackHandles[i] = tracks[i].Handle;
+
+                ThrowHelper.ThrowIfError(LibSpotify.sp_track_set_starred_r(session.Handle, trackHandles,
+                    trackHandles.Length, starred));
+            }
+        }
+        #endregion
     }
 }

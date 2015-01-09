@@ -26,6 +26,11 @@ namespace Spotify.Internal
             Image image = new Image(LibSpotify.sp_image_create_r(session.Handle, load(p, size)));
             result.Closure = image;
             image.Loaded += result.HandleImageLoaded;
+
+            // It's possible the image loaded before we registered the result.HandleImageLoaded
+            if (image.IsLoaded)
+                result.CompletedSynchronously = true;
+
             return result;
         }
 

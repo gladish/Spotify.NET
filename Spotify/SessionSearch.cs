@@ -51,7 +51,7 @@ namespace Spotify
         }
 
         public Search EndSearch(IAsyncResult result)
-        {
+        {            
             AsyncSearchResult searchResult = ThrowHelper.DownCast<AsyncSearchResult>(result, "result");
             searchResult.WaitForCallbackComplete();
             searchResult.SetCompleted(searchResult.Closure.Error);

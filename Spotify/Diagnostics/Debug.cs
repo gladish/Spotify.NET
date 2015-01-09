@@ -5,12 +5,12 @@ namespace Spotify.Diagnostics
 {
     public static class Debug
     {
-        public static void Print(TextWriter writer, Spotify.Track track, Spotify.Session session = null)
+        public static void Print(TextWriter writer, Spotify.Session session, Spotify.Track track)
         {
             TimeSpan duration = track.Duration;
 
             if (session != null)
-                writer.WriteLine(" " + session.IsTrackStarred(track));
+                writer.WriteLine(" " + track.IsStarred(session));
 
             writer.WriteLine("Track {0} [{1}] has {2} artist(s), {3}% popularity",
                 track.Name,
@@ -44,7 +44,7 @@ namespace Spotify.Diagnostics
 
             writer.WriteLine("Tracks");
             foreach (Spotify.Track track in search.Tracks)
-                Print(writer, track, session);
+                Print(writer, session, track);
         }
 
         public static void Print(TextWriter writer, Spotify.Album album, Spotify.Session session = null)

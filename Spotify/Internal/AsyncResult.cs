@@ -25,16 +25,21 @@ namespace Spotify.Internal
         }
 
         public void SetCompleted(Error code)
+        {            
+            Exception ex = null;
+            if (code != Error.Ok)
+                ex = new Spotify.Exception(code);
+            SetCompleted(ex);                        
+        }
+
+        public void SetCompleted(System.Exception pendingException)
         {
+            PendingException = pendingException;
+
             Exception ex = null;
 
             lock (_lock)
-            {
-                if (code != Error.Ok)
-                    PendingException = new Spotify.Exception(code);
-                else
-                    PendingException = null;
-
+            {              
                 try
                 {
                     IsCompleted = true;
@@ -48,7 +53,7 @@ namespace Spotify.Internal
 
             if (ex != null)
                 Environment.RaiseUnhandledException(this, ex, false);
-        }
+        }       
 
         public void CheckPendingException()
         {
@@ -81,10 +86,8 @@ namespace Spotify.Internal
 
         public bool CompletedSynchronously
         {
-            get
-            {
-                return false;
-            }
+            get;
+            internal set;
         }
 
         public bool IsCompleted
@@ -93,7 +96,7 @@ namespace Spotify.Internal
             set;
         }
 
-        public Exception PendingException
+        public System.Exception PendingException
         {
             get;
             private set;

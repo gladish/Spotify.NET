@@ -180,11 +180,16 @@ namespace Spotify
             GC.SuppressFinalize(this);
         }
 
-        public void Start()
+        public void BeginProcessingEvents()
         {            
             _thread = new Thread(ProcessEvents);
             _thread.Name = "Spotify.NET Event";
             _thread.Start();
+        }
+
+        public void Shutdown()
+        {
+            Stop();
         }
 
         public void ReLogin()
@@ -312,51 +317,6 @@ namespace Spotify
             return syncStatus;
         }
 
-        public TrackAvailability GetTrackAvailability(Track track)
-        {
-            ThrowHelper.ThrowIfNull(track, "track");
-            return LibSpotify.sp_track_get_availability_r(Handle, track.Handle);
-        }
-
-        public bool IsTrackLocal(Track track)
-        {
-            ThrowHelper.ThrowIfNull(track, "track");
-            return LibSpotify.sp_track_is_local_r(Handle, track.Handle);
-        }
-
-        public bool IsTrackAutoLinked(Track track)
-        {
-            ThrowHelper.ThrowIfNull(track, "track");
-            return LibSpotify.sp_track_is_autolinked_r(Handle, track.Handle);
-        }
-
-        public Track GetPlayableTrack(Track track)
-        {
-            ThrowHelper.ThrowIfNull(track, "track");
-            return new Track(LibSpotify.sp_track_get_playable_r(Handle, track.Handle));
-        }
-
-        public bool IsTrackStarred(Track track)
-        {
-            ThrowHelper.ThrowIfNull(track, "track");
-            return LibSpotify.sp_track_is_starred_r(Handle, track.Handle);
-        }
-
-        public void SetTracksStarred(IList<Track> tracks, bool starred)
-        {
-            ThrowHelper.ThrowIfNull(tracks, "tracks");
-
-            if (tracks.Count > 0)
-            {
-                IntPtr[] trackHandles = new IntPtr[tracks.Count];
-                for (int i = 0; i < tracks.Count; ++i)
-                    trackHandles[i] = tracks[i].Handle;
-
-                ThrowHelper.ThrowIfError(LibSpotify.sp_track_set_starred_r(Handle, trackHandles, 
-                    trackHandles.Length, starred));
-            }
-        }
-
         public static Session Create(SessionConfig sessionConfig)
         {
             Session session = new Session();
@@ -459,8 +419,11 @@ namespace Spotify
         {
             _running = false;
             _notifyEvent.Set();
-            _thread.Join();
-            _thread = null;
+            if (_thread != null)
+            {
+                _thread.Join();
+                _thread = null;
+            }
         }        
 
         private TimeSpan ProcessEventsInternal()

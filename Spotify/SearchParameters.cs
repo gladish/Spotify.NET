@@ -8,7 +8,7 @@ namespace Spotify
         {
             get
             {
-                return new SearchParameters() { Query = "tag:snew" };
+                return new SearchParameters() { Query = "tag:new" };
             }
         }
 
