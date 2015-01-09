@@ -80,7 +80,6 @@ namespace Spotify
             }
         }
 
-
         public IList<Track> Tracks
         {
             get
