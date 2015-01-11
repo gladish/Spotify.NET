@@ -8,6 +8,9 @@ namespace playground
 {
     public partial class Program
     {
+        // Put your application here HERE
+        private static byte[] myApplicationKey = { };
+
         public static void Main(string[] args)
         {
             string username = args[0];
@@ -17,6 +20,10 @@ namespace playground
             Spotify.Environment.UnhandledException += Environment_UnhandledException;
 
             var sessionConfig = new Spotify.SessionConfig();
+            // sessionConfig.ApplicationKey = myApplicationKey;
+
+            // I'm using a file instead of the byte array. The spotify_appkey.key is NOT a text file. It's the bytes
+            // of the application key in binary format.
             sessionConfig.ApplicationKeyFile = @"c:\Temp\spotify_appkey.key";
             sessionConfig.UserAgent = "playground";            
 
