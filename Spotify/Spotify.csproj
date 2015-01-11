@@ -65,6 +65,7 @@
     <Compile Include="OfflineErrorEventArgs.cs" />
     <Compile Include="PlaylistAddedEventArgs.cs" />
     <Compile Include="PlaylistDescriptionChangedEventArgs.cs" />
+    <Compile Include="PlaylistImageChangedEventArgs.cs" />
     <Compile Include="PlaylistMovedEventArgs.cs" />
     <Compile Include="PlaylistRemovedEventArgs.cs" />
     <Compile Include="PlaylistTrackCreatedChangedEventArgs.cs" />

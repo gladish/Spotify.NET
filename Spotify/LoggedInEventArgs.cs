@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class LoggedInEventArgs : ErrorEventArgs
     {
-        public LoggedInEventArgs(Error code)
+        internal LoggedInEventArgs(Error code)
             : base(code)
         {
         }

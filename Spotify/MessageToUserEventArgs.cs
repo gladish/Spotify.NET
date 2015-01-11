@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class MessageToUserEventArgs : EventArgs
     {
-        public MessageToUserEventArgs(string s) 
+        internal MessageToUserEventArgs(string s) 
         { 
             Message = s; 
         }

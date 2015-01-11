@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class PlaylistDescriptionChangedEventArgs : EventArgs
     {
-        public PlaylistDescriptionChangedEventArgs(string description)
+        internal PlaylistDescriptionChangedEventArgs(string description)
         {
             Descripion = description;
         }

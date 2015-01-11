@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class PlaylistTrackMessageChangedEventArgs : EventArgs
     {
-        public PlaylistTrackMessageChangedEventArgs(int position, string message)
+        internal PlaylistTrackMessageChangedEventArgs(int position, string message)
         {
             Message = message;
             Position = position;

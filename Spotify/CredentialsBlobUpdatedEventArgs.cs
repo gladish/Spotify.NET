@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class CredentialsBlobUpdatedEventArgs : EventArgs
     {
-        public CredentialsBlobUpdatedEventArgs(string s)
+        internal CredentialsBlobUpdatedEventArgs(string s)
         {
             Blob = s;
         }

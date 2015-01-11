@@ -141,7 +141,7 @@ namespace Spotify
             return make(get(p, index));
         }
 
-        protected IList<T> MakeList<T>(MakeListConstructor<T> make, MakeListGetCount count, MakeListGetItem<T> get)
+        protected List<T> MakeList<T>(MakeListConstructor<T> make, MakeListGetCount count, MakeListGetItem<T> get)
         {
             ThrowHelper.ThrowIfNull(count, "count");
             ThrowHelper.ThrowIfNull(get, "get");

@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class PrivateSessonModeChangedEventArgs : EventArgs
     {
-        public PrivateSessonModeChangedEventArgs(bool b)
+        internal PrivateSessonModeChangedEventArgs(bool b)
         {
             Changed = b;
         }

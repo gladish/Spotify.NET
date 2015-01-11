@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class PlaylistTrackSeenChangedEventArgs : EventArgs
     {
-        public PlaylistTrackSeenChangedEventArgs(int position, bool seen)
+        internal PlaylistTrackSeenChangedEventArgs(int position, bool seen)
         {
             Seen = seen;
             Position = position;

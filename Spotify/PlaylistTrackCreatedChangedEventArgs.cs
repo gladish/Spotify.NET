@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class PlaylistTrackCreatedChangedEventArgs : EventArgs
     {
-        public PlaylistTrackCreatedChangedEventArgs(int position, User user, DateTime when)
+        internal PlaylistTrackCreatedChangedEventArgs(int position, User user, DateTime when)
         {
             Position = position;
             User = user;

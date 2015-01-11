@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 using Spotify.Internal;
 
@@ -21,13 +22,13 @@ namespace Spotify
         public event EventHandler<PlaylistTrackCreatedChangedEventArgs> TrackCreatedChanged;
         public event EventHandler<PlaylistTrackSeenChangedEventArgs> TrackSeenChanged;
         public event EventHandler<PlaylistDescriptionChangedEventArgs> DescriptionChanged;
-
-        // public event PropertyChangedEventHandler PropertyChanged;
-
-        // TODO ImageChanged
-
+        public event EventHandler<PlaylistImageChangedEventArgs> ImageChanged;
         public event EventHandler SubscribersChanged;
         public event EventHandler<PlaylistTrackMessageChangedEventArgs> TrackMessageChanged;
+        
+        // There are so many "Changed" Events. I wonder if using PropertyChange is more appropriate.
+        // public event PropertyChangedEventHandler PropertyChanged;
+
         #endregion
 
         internal Playlist(IntPtr handle, bool preIncremented = true)
@@ -35,6 +36,7 @@ namespace Spotify
         {
             _callbacks = new LibSpotify.sp_playlist_callbacks();
             _callbacks.description_changed = OnDescriptionChanged;
+            _callbacks.image_changed = OnImageChanged;
             _callbacks.playlist_metadata_updated = OnMetadataUpdated;
             _callbacks.playlist_renamed = OnRenamed;
             _callbacks.playlist_state_changed = OnStateChanged;
@@ -135,8 +137,6 @@ namespace Spotify
                 ThrowHelper.ThrowIfError(LibSpotify.sp_playlist_set_autolink_tracks_r(Handle, value));
             }
         }
-
-        // TODO sp_playlist_get_image???
 
         public bool HasPendingChanges
         {
@@ -260,6 +260,44 @@ namespace Spotify
         }
         #endregion
 
+        #region Async Methods
+        public Task<Image> LoadImageAsync(Session session, AsyncCallback userCallback, object state)
+        {
+            return Task.Factory.FromAsync<Session, Image>(BeginLoadImage, EndLoadImage, session, state);
+        }
+
+        public IAsyncResult BeginLoadImage(Session session, AsyncCallback userCallback, object state)
+        {
+            byte[] imageId = new byte[20];
+
+            bool hasImage = LibSpotify.sp_playlist_get_image_r(Handle, imageId);
+            if (!hasImage)
+            {
+                AsyncLoadImageResult result = new AsyncLoadImageResult(userCallback, state);
+                result.CompletedSynchronously = true;
+                result.SetCallbackComplete();
+                result.SetCompleted(Error.Ok);
+                return result;
+            }
+
+            IntPtr p = System.Runtime.InteropServices.Marshal.AllocHGlobal(imageId.Length);
+            try
+            {
+                System.Runtime.InteropServices.Marshal.Copy(imageId, 0, p, imageId.Length);
+                return ImageLoader.Begin((ptr, size) => { return ptr; }, p, session, ImageSize.Normal, userCallback, state);
+            }
+            finally
+            {
+                System.Runtime.InteropServices.Marshal.FreeHGlobal(p);
+            }
+        }
+
+        public Image EndLoadImage(IAsyncResult result)
+        {
+            return ImageLoader.End(result);
+        }
+        #endregion
+
         #region Private Methods   
         private static IList<string> MarshalPlaylistSubscribers(IntPtr playlist)
         {
@@ -366,7 +404,8 @@ namespace Spotify
 
         private void OnImageChanged(IntPtr playlist, IntPtr image, IntPtr state)
         {
-            // TODO
+            Internal.EventDispatcher.Dispatch(this, playlist, ImageChanged,
+                new PlaylistImageChangedEventArgs(image));
         }
 
         private void OnMessageChanged(IntPtr playlist, int position, IntPtr message, IntPtr state)

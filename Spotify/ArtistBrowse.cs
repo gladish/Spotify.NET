@@ -84,8 +84,8 @@ namespace Spotify
         {
             get
             {
-                return MakeList(p => { return new Track(p, false); }, LibSpotify.sp_artistbrowse_num_tracks_r, 
-                    LibSpotify.sp_artistbrowse_track_r);
+                return MakeList(p => { return new Track(p, false); }, LibSpotify.sp_artistbrowse_num_tracks_r,
+                    LibSpotify.sp_artistbrowse_track_r).AsReadOnly();
             }
         }
 
@@ -94,7 +94,7 @@ namespace Spotify
             get
             {
                 return MakeList(p => { return new Track(p, false); }, LibSpotify.sp_artistbrowse_num_tophit_tracks_r,
-                    LibSpotify.sp_artistbrowse_tophit_track_r);
+                    LibSpotify.sp_artistbrowse_tophit_track_r).AsReadOnly();
             }
         }
 
@@ -103,7 +103,7 @@ namespace Spotify
             get
             { 
                 return MakeList(p => { return new Album(p, false); }, LibSpotify.sp_artistbrowse_num_albums_r,
-                    LibSpotify.sp_artistbrowse_album_r);
+                    LibSpotify.sp_artistbrowse_album_r).AsReadOnly();
             }
         }     
 
@@ -112,7 +112,7 @@ namespace Spotify
             get
             {
                 return MakeList(p => { return new Artist(p, false); }, LibSpotify.sp_artistbrowse_num_similar_artists_r,
-                    LibSpotify.sp_artistbrowse_similar_artist_r);
+                    LibSpotify.sp_artistbrowse_similar_artist_r).AsReadOnly();
             }
         }
 
@@ -145,11 +145,11 @@ namespace Spotify
         public IAsyncResult BeginLoadPortraits(Session session, AsyncCallback userCallback, object state)
         {
             ThrowHelper.ThrowIfNull(session, "session");
+
             int n = LibSpotify.sp_artistbrowse_num_portraits_r(Handle);
-
             AsyncLoadPortraitsResult result = new AsyncLoadPortraitsResult(n, userCallback, state);
-
             result.Closure = new List<Image>();
+
             for (int i = 0; i < n; ++i)
             {
                 Image image = new Image(LibSpotify.sp_image_create_r(session.Handle, LibSpotify.sp_artistbrowse_portrait_r(Handle, i)));

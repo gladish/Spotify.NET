@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class MusicDeliveryEventArgs : EventArgs
     {
-        public MusicDeliveryEventArgs(byte[] data, AudioFormat format)
+        internal MusicDeliveryEventArgs(byte[] data, AudioFormat format)
         {
             PcmData = data;
             Format = format;

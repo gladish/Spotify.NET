@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace playground
 {
-    class Program
+    public partial class Program
     {
         public static void Main(string[] args)
         {
@@ -24,8 +24,9 @@ namespace playground
             session.LoggedIn += session_LoggedIn;
             session.MessageToUser += session_MessageToUser;
             session.LogMessage += session_LogMessage;
-            
-            RunAsync(session, username, password);            
+
+            GetArtistProtraits(session, username, password)
+                .ContinueWith((continuation) => { session.Shutdown(); });
 
             Console.WriteLine("Processing Events");
             session.ProcessEvents();
@@ -39,30 +40,6 @@ namespace playground
         private static void session_MessageToUser(object sender, Spotify.MessageToUserEventArgs e)
         {
             Console.WriteLine("Message: {0}", e.Message);
-        }
-
-        private static async Task RunAsync(Spotify.Session session, string username, string password)
-        {
-            await session.LoginAsync(new Spotify.LoginParameters() { UserName = username, Password = password }, null);
-            
-            var query = new Spotify.SearchParameters();
-            query.ArtistCount = 10;
-            query.Query = "leonard cohen";
-            query.SearchType = Spotify.SearchType.Standard;
-            query.AlbumCount = 1;
-          
-            var search = await session.SearchAsync(query, null);
-            var artistBrowse = await session.BrowseAristAsync(search.Artists[0], Spotify.ArtistBrowseType.NoTracks, null);
-            var portraits = await artistBrowse.LoadPortraitsAsync(session, null);
-
-            int id = 0;
-            foreach (var p in portraits)
-            {
-                string file = string.Format("c:/Temp/Image{0}.jpg", id++);
-                p.ToImage().Save(file);
-            }
-
-            session.Shutdown();
         }
 
         private static void session_LoggedIn(object sender, Spotify.LoggedInEventArgs e)

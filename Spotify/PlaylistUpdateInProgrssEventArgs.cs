@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class PlaylistUpdateInProgrssEventArgs : EventArgs
     {
-        public PlaylistUpdateInProgrssEventArgs(bool done)
+        internal PlaylistUpdateInProgrssEventArgs(bool done)
         {
             Done = done;
         }

@@ -4,7 +4,7 @@ namespace Spotify
 {
     public class ErrorEventArgs : EventArgs
     {
-        public ErrorEventArgs(Error code) 
+        internal ErrorEventArgs(Error code) 
         { 
             ErrorCode = code; 
         }
