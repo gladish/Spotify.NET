@@ -9,7 +9,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public class Playlist : DomainObject //, INotifyPropertyChanged
+    public sealed class Playlist : DomainObject //, INotifyPropertyChanged
     {
         #region Events
         public event EventHandler<PlaylistTracksAddedEventArgs> TracksAdded;

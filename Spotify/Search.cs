@@ -4,7 +4,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public class Search : DomainObject
+    public sealed class Search : DomainObject
     {
         internal Search(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_search_add_ref_r, LibSpotify.sp_search_release_r, preIncremented)

@@ -31,12 +31,18 @@ namespace playground
             session.LoggedIn += session_LoggedIn;
             session.MessageToUser += session_MessageToUser;
             session.LogMessage += session_LogMessage;
+            session.CredentialsBlobUpdated += session_CredentialsBlobUpdated;
 
             GetArtistProtraits(session, username, password)
                 .ContinueWith((continuation) => { session.Shutdown(); });
 
             Console.WriteLine("Processing Events");
             session.ProcessEvents();
+        }
+
+        static void session_CredentialsBlobUpdated(object sender, Spotify.CredentialsBlobUpdatedEventArgs e)
+        {
+            Console.WriteLine("Credentials Updated:{0}", e.Blob);
         }
 
         private static void session_LogMessage(object sender, Spotify.LogMessageEventArgs e)

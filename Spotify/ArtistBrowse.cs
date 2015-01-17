@@ -7,7 +7,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public class ArtistBrowse : DomainObject
+    public sealed class ArtistBrowse : DomainObject
     {
         private class AsyncLoadPortraitsResult : AsyncCallbackResult<IList<Image>>
         {

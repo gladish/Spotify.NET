@@ -5,7 +5,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public class Artist : DomainObject
+    public sealed class Artist : DomainObject
     {
         internal Artist(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_artist_add_ref_r, LibSpotify.sp_artist_release_r, preIncremented)

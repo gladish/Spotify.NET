@@ -6,7 +6,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public class PlaylistContainer : DomainObject
+    public sealed class PlaylistContainer : DomainObject
     {
         #region Events
         public event EventHandler<PlaylistAddedEventArgs> PlaylistAdded;

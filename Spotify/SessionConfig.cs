@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Spotify
 {
-    public class SessionConfig
+    public sealed class SessionConfig
     {
         public SessionConfig()
         {

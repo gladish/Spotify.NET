@@ -5,7 +5,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public class Image : DomainObject
+    public sealed class Image : DomainObject
     {
         public event EventHandler Loaded;
 

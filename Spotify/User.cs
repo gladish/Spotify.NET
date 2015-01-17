@@ -3,8 +3,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    // complete
-    public class User : DomainObject
+    public sealed class User : DomainObject
     {
         internal User(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_user_add_ref_r, LibSpotify.sp_user_release_r, preIncremented)
@@ -18,7 +17,7 @@ namespace Spotify
             {
                 return LibSpotify.ReadUtf8(LibSpotify.sp_user_canonical_name_r(Handle));
             }
-        }
+        }    
 
         public string DisplayName
         {

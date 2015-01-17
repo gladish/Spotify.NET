@@ -3,7 +3,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public class Link : DomainObject
+    public sealed class Link : DomainObject
     {
         internal Link(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_link_add_ref_r, LibSpotify.sp_link_release_r, preIncremented)

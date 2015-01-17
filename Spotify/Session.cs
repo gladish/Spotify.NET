@@ -9,7 +9,7 @@ using Spotify.Internal;
 
 namespace Spotify
 {
-    public partial class Session : IDisposable
+    public sealed partial class Session : IDisposable
     {
         public event EventHandler NotifyMainThread;
         public event EventHandler<LoggedInEventArgs> LoggedIn;
@@ -53,7 +53,10 @@ namespace Spotify
         {
             get
             {
-                return new User(LibSpotify.sp_session_user_r(Handle), false);
+                IntPtr p = LibSpotify.sp_session_user_r(Handle);
+                return p != IntPtr.Zero
+                    ? new User(LibSpotify.sp_session_user_r(Handle), false)
+                    : null;
             }
         }
 

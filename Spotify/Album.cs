@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Spotify
 {
-    public class Album : DomainObject
+    public sealed class Album : DomainObject
     {
         internal Album(IntPtr handle, bool preIncremented = true)
             : base(handle, LibSpotify.sp_album_add_ref_r, LibSpotify.sp_album_release_r, preIncremented)
