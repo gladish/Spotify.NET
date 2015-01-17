@@ -32,10 +32,10 @@ namespace playground
             session.MessageToUser += session_MessageToUser;
             session.LogMessage += session_LogMessage;
             session.CredentialsBlobUpdated += session_CredentialsBlobUpdated;
-
+                        
             GetArtistProtraits(session, username, password)
                 .ContinueWith((continuation) => { session.Shutdown(); });
-
+            
             Console.WriteLine("Processing Events");
             session.ProcessEvents();
         }

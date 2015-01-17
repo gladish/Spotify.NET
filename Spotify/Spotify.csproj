@@ -44,7 +44,9 @@
     <Compile Include="ConnectionErrorEventArgs.cs" />
     <Compile Include="CredentialsBlobUpdatedEventArgs.cs" />
     <Compile Include="ErrorEventArgs.cs" />
+    <Compile Include="IAsyncLoadable.cs" />
     <Compile Include="Internal\AsyncCallbackResult.cs" />
+    <Compile Include="Internal\AsyncLoadableResult.cs" />
     <Compile Include="Internal\AsyncResult.cs" />
     <Compile Include="AudioBufferStats.cs" />
     <Compile Include="AudioFormat.cs" />

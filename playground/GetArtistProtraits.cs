@@ -18,7 +18,7 @@ namespace playground
             query.Query = "leonard cohen";
             query.SearchType = Spotify.SearchType.Standard;
             query.AlbumCount = 1;
-
+           
             var search = await session.SearchAsync(query, null);
             var artistBrowse = await session.BrowseAristAsync(search.Artists[0], Spotify.ArtistBrowseType.NoTracks, null);
             var portraits = await artistBrowse.LoadPortraitsAsync(session, null);

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Spotify.Internal
 {
-    internal class AsyncLoadableResult<TClosure> : AsyncCallbackResult<TClosure> where TClosure : AbstractAsyncLoadable
+    internal class AsyncLoadableResult<TClosure> : AsyncCallbackResult<TClosure> where TClosure : class, IAsyncLoadable
     {
         public delegate Error ErrorDelegate(TClosure closure);
 
@@ -19,7 +19,7 @@ namespace Spotify.Internal
             _error = error;
 
             Closure = closure;
-            Closure.Loaded += OnLoaded;
+            Closure.Loaded += OnLoaded;            
         }
 
         private void OnLoaded(object sender, EventArgs e)

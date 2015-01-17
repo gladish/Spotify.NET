@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Spotify.Internal;
 
@@ -76,6 +77,7 @@ namespace Spotify
             }
         }
 
+        /*
         public PlaylistContainer PlaylistContainer
         {
             get
@@ -85,6 +87,35 @@ namespace Spotify
                     return null;
                 return new PlaylistContainer(p, false);
             }
+        }
+         */
+
+        public Task<PlaylistContainer> LoadPlaylistContainerAsync(object state)
+        { 
+            return Task.Factory.FromAsync<PlaylistContainer>(BeginLoadPlaylistContainer, EndLoadPlaylistContainer, state);
+        }
+
+        public IAsyncResult BeginLoadPlaylistContainer(AsyncCallback userCallback, object state)
+        {
+            IntPtr p = LibSpotify.sp_session_playlistcontainer_r(Handle);
+            if (p == IntPtr.Zero)
+                return new AsyncLoadableResult<PlaylistContainer>(
+                    null,
+                    (container) => { return Error.Ok; },
+                    userCallback,
+                    state) { CompletedSynchronously = true };
+
+            PlaylistContainer playlistContainer = new PlaylistContainer(p, false);
+            return AsyncLoadableResult<PlaylistContainer>.Begin(            
+                playlistContainer,
+                (container) => { return Error.Ok; },
+                userCallback,
+                state);
+        }
+
+        public PlaylistContainer EndLoadPlaylistContainer(IAsyncResult result)
+        {
+            return ThrowHelper.DownCast<AsyncLoadableResult<PlaylistContainer>>(result, "result").End();
         }
 
         public bool IsVolumeNormalization
