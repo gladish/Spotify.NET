@@ -57,7 +57,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y $(SolutionDir)libspotify-12.1.51-win32-release\lib\libspotify.dll $(ProjectDir)$(OutDir)\libspotify.dll</PostBuildEvent>
+    <PostBuildEvent Condition=" '$(OS)' == 'Windows_NT' ">copy /y $(SolutionDir)libspotify-12.1.51-win32-release\lib\libspotify.dll $(ProjectDir)$(OutDir)\libspotify.dll</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
