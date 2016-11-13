@@ -450,7 +450,7 @@ namespace Spotify
         }
 
         private void Stop()
-        {
+        {            
             _running = false;
             _notifyEvent.Set();
             if (_thread != null)

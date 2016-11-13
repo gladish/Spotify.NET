@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Spotify
@@ -78,6 +79,46 @@ namespace Spotify
         {
             return Internal.ImageLoader.End(result);
         }
+
+
+        private class BrowseResult : Internal.AsyncCallbackResult<AlbumBrowse>
+        {
+            public BrowseResult(AsyncCallback userCallback, object state) : base(userCallback, state)
+            { }
+           
+            public void Complete(IntPtr albumBrowse, IntPtr data)
+            {
+                if (albumBrowse != IntPtr.Zero)
+                    Closure = new AlbumBrowse(albumBrowse);
+                SetCallbackComplete();
+            }
+        }
+
+        public Task<AlbumBrowse> BrowseAsync(Session session, object state)
+        {
+            return Task.Factory.FromAsync<Session, AlbumBrowse>(BeginBrowse, EndBrowse, session, state);
+        }
+
+        public IAsyncResult BeginBrowse(Session session, AsyncCallback userCallback, object state)
+        {
+            Internal.ThrowHelper.ThrowIfNull(session, "session");
+            Internal.ThrowHelper.ThrowIfNull(userCallback, "userCallback");
+
+            BrowseResult browseResult = new BrowseResult(userCallback, state);
+            LibSpotify.sp_albumbrowse_create_r(session.Handle, Handle, browseResult.Complete, IntPtr.Zero);
+
+            return browseResult;
+        }
+
+        public AlbumBrowse EndBrowse(IAsyncResult result)
+        {
+            BrowseResult browseResult = Internal.ThrowHelper.DownCast<BrowseResult>(result, "result");
+            browseResult.WaitForCallbackComplete();
+            browseResult.SetCompleted(browseResult.Closure.Error);
+            browseResult.CheckPendingException();
+            return browseResult.Closure;
+        }
+
         #endregion
     }
 }

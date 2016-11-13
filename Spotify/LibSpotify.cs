@@ -364,7 +364,7 @@ namespace Spotify
         {
             lock (_apiLock)
                 return sp_albumbrowse_num_tracks(alb);
-        }
+        }             
 
         [System.Runtime.InteropServices.DllImport("libspotify")]
         private static extern Spotify.Error sp_albumbrowse_release(System.IntPtr alb);
